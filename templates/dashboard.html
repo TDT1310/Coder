@@ -1,57 +1,558 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Analysis Result</title>
-  <style>
-    body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      margin: 20px;
-      color: #33475b;
-    }
-    h1 {
-      color: #1e40af;
-    }
-    pre {
-      background: #f7f7f7;
-      padding: 20px;
-      border-radius: 8px;
-      white-space: pre-wrap;
-      font-size: 14px;
-      line-height: 1.4;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 20px;
-    }
-    table, th, td {
-      border: 1px solid #ccc;
-    }
-    th, td {
-      padding: 8px;
-      text-align: left;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FraudDetect Pro Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+  * { box-sizing: border-box; }
+  body {
+    margin:0; 
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background: #f9fafb;
+    color: #1f2937;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  a {
+    color: #2563eb;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  a:hover { text-decoration: underline; }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+  header, .main-title, .cards-row, .charts-row, .bottom-row, .recommendations, .info-block, .benford-analysis, .financial-ratios, .mscore-analysis, .chart-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #1f2937;
+  }
+  .logo svg {
+    width: 20px;
+    height: 20px;
+    fill: #2563eb;
+    margin-right: 8px;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  button, .btn-blue, .btn-white, .download-pdf, .download-excel {
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .download-pdf {
+    background-color: #2563eb;
+    color: white;
+  }
+  .download-excel {
+    background-color: #22c55e;
+    color: white;
+  }
+  .btn-blue {
+    background-color: #2563eb;
+    color: white;
+    flex: 1;
+  }
+  .btn-white {
+    background-color: white;
+    color: #2563eb;
+    border: 2px solid #2563eb;
+    flex: 1;
+  }
+  .user-profile {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: url('https://i.pravatar.cc/36') center/cover no-repeat;
+    border: 2px solid #2563eb;
+  }
+  .main-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 24px 0 24px;
+    border-bottom: 1px solid #e5e7eb;
+    flex-wrap: wrap;
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .main-title-left {
+    max-width: 70%;
+  }
+  .main-title-left h1 {
+    font-weight: 700;
+    font-size: 1.75rem;
+    margin: 0 0 8px 0;
+    color: #1f2937;
+  }
+  .report-details, .submitter-info {
+    font-size: 0.875rem;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    color: #6b7280;
+    font-weight: 500;
+    align-items: center;
+  }
+  .report-details span, .submitter-info {
+    white-space: nowrap;
+  }
+  .submitter-info svg {
+    width: 18px;
+    height: 18px;
+    fill: #6b7280;
+  }
+  .cards-row, .charts-row, .bottom-row {
+    display: flex;
+    gap: 16px;
+    margin: 24px 0;
+    flex-wrap: wrap;
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .card {
+    flex: 1 1 calc(25% - 12px);
+    min-width: 260px;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
+  }
+  .card-header-tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+  .card-overall { background: #fef3c7; color: #92400e; }
+  .card-overall .card-header-tag { background: #fde68a; color: #78350f; }
+  .card-overall .status { font-weight: 700; font-size: 1.25rem; }
+  .card-mscore { background: #fef9c3; color: #78350f; position: relative; }
+  .card-mscore .label, .card-benford .label, .card-aggregated .label { font-weight: 600; margin-bottom: 6px; }
+  .card-mscore .score { font-size: 2.5rem; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .card-mscore .threshold { font-size: 0.875rem; color: #6b7280; margin-bottom: 8px; }
+  .card-mscore .warning {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.875rem; color: #b45309; font-weight: 600;
+  }
+  .card-mscore .warning svg { width: 16px; height: 16px; fill: #b45309; }
+  .card-benford { background: #fee2e2; color: #991b1b; }
+  .card-benford .level { font-weight: 700; font-size: 1.25rem; margin-bottom: 4px; }
+  .card-benford .mad { font-size: 0.875rem; color: #991b1b; margin-bottom: 6px; }
+  .card-benford .note { font-size: 0.75rem; color: #991b1b; font-weight: 600; }
+  .card-aggregated { background: #d1fae5; color: #065f46; display: flex; flex-direction: column; justify-content: space-between; }
+  .card-aggregated .score { font-weight: 700; font-size: 2rem; margin-bottom: 4px; }
+  .card-aggregated .risk { font-size: 0.875rem; margin-bottom: 6px; }
+  .card-aggregated a { font-weight: 600; font-size: 0.875rem; color: #2563eb; }
+  .chart-container {
+    flex: 1 1 48%;
+    min-width: 320px;
+    padding: 20px 24px;
+    position: relative;
+  }
+  .chart-header {
+    font-weight: 700;
+    font-size: 1.125rem;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .chart-header a { font-size: 0.875rem; color: #2563eb; font-weight: 600; }
+  .line-chart, .heatmap, .benford-chart {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #f3f4f6;
+    position: relative;
+  }
+  .line-chart { height: 150px; }
+  .heatmap { height: 150px; }
+  .benford-chart { height: 80px; }
+  .legend, .benford-legend {
+    display: flex;
+    gap: 16px;
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+    color: #6b7280;
+  }
+  .legend span, .benford-legend span { display: flex; align-items: center; gap: 6px; }
+  .legend-color, .benford-legend-color {
+    width: 12px; height: 12px; border-radius: 2px; display: inline-block;
+  }
+  .legend-mscore { background: #2563eb; }
+  .legend-benford { background: #dc2626; }
+  .legend-indicator { background: #16a34a; }
+  .benford-actual { background: #2563eb; }
+  .benford-expected { background: #6b7280; }
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: 60px repeat(4, 1fr);
+    grid-auto-rows: 28px;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #374151;
+  }
+  .heatmap-label, .heatmap-year { font-weight: 600; display: flex; align-items: center; }
+  .heatmap-year { text-align: center; line-height: 28px; }
+  .heatmap-block { border-radius: 4px; }
+  .heatmap-block.green { background-color: #bbf7d0; }
+  .heatmap-block.yellow { background-color: #fde68a; }
+  .heatmap-block.red { background-color: #fecaca; }
+  .bottom-row { gap: 16px; }
+  .left-column, .right-column {
+    flex: 1 1 48%;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .mscore-analysis, .benford-analysis, .financial-ratios, .info-block, .recommendations {
+    padding: 16px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
+  }
+  .mscore-analysis { position: relative; }
+  .expand-link {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    font-size: 0.875rem;
+    color: #2563eb;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mscore-current { font-size: 2rem; font-weight: 700; color: #78350f; margin: 0 0 8px 0; }
+  .warning-label {
+    display: inline-block;
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 700;
+    font-size: 0.875rem;
+    padding: 2px 8px;
+    border-radius: 16px;
+    vertical-align: middle;
+    margin-left: 12px;
+  }
+  .threshold-volatility {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .threshold-volatility svg { width: 14px; height: 14px; fill: #22c55e; }
+  .contrib-factors { margin-bottom: 8px; }
+  .contrib-factors ul { margin: 4px 0 12px 16px; padding: 0; }
+  .contrib-factors li { margin-bottom: 6px; }
+  .yoy-value { font-weight: 600; font-size: 0.875rem; color: #2563eb; margin-bottom: 8px; }
+  .small-line-graph { height: 50px; background: linear-gradient(to right, #dbeafe, #2563eb); border-radius: 6px; }
+  .info-block h3, .benford-analysis h3, .financial-ratios h3, .recommendations h3 {
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 12px 0;
+    color: #1f2937;
+  }
+  .info-block ul, .recommendations ul {
+    margin: 0;
+    padding-left: 20px;
+    list-style-type: disc;
+    color: #374151;
+  }
+  .info-block ul li, .recommendations ul li, .financial-ratios li {
+    margin-bottom: 6px;
+    font-size: 0.875rem;
+  }
+  .highlight-red { color: #dc2626; font-weight: 700; }
+  .highlight-orange { color: #ea580c; font-weight: 600; }
+  .highlight-green { color: #16a34a; font-weight: 600; }
+  .highlight-blue { color: #2563eb; font-weight: 600; }
+  .financial-ratios ul { list-style: none; padding: 0; margin: 0; }
+  .arrow-up { display: inline-block; color: #dc2626; font-weight: 700; margin-right: 4px; }
+  .arrow-down { display: inline-block; color: #ea580c; font-weight: 600; margin-right: 4px; }
+  .stable-green { color: #16a34a; font-weight: 600; }
+  .recommendations {
+    padding: 20px 24px;
+    max-width: 480px;
+    margin-left: auto;
+  }
+  .recommendations ul { margin-bottom: 20px; }
+  .rec-buttons { display: flex; gap: 12px; }
+  /* Footer */
+  footer {
+    margin-top: 40px;
+    padding: 20px 16px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #6b7280;
+    border-top: 1px solid #e5e7eb;
+  }
+  /* Icons used inline SVG */
+  svg.icon { vertical-align: middle; }
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .cards-row, .charts-row, .bottom-row { flex-wrap: wrap; }
+    .card { flex: 1 1 45%; }
+    .chart-container { flex: 1 1 100%; min-width: auto; }
+    .left-column, .right-column { flex: 1 1 100%; min-width: auto; }
+    .recommendations { margin-left: 0; max-width: 100%; }
+  }
+  @media (max-width: 480px) {
+    .main-title-left { max-width: 100%; margin-bottom: 12px; }
+    .submitter-info { justify-content: flex-start; }
+    .header-right { gap: 8px; }
+  }
+</style>
 </head>
 <body>
-  <h1>Analysis Result</h1>
-  <section>
-    <h2>M-Score Analysis</h2>
-    <pre>{{ result }}</pre>
+<header>
+  <div class="logo" aria-label="FraudDetect Pro Logo">
+    <svg aria-hidden="true" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" style="color:#2563eb;">
+      <path d="M12 2L3 7v6c0 5 4 9 9 9s9-4 9-9V7l-9-5z"></path>
+      <path d="M12 22v-9"></path>
+    </svg>
+    FraudDetect Pro
+  </div>
+  <div class="header-right">
+    <button class="download-pdf" aria-label="Download PDF">Download PDF</button>
+    <button class="download-excel" aria-label="Download Excel">Download Excel</button>
+    <div class="user-profile" aria-label="User Profile"></div>
+  </div>
+</header>
+
+<main class="container">
+  <section class="main-title" aria-labelledby="dashbo                                                                                                                                                     ard-                                           title">
+    <div class="main-title-left">
+      <h1 id="dashboard-title">Financial Report Fraud Analysis</h1>
+      <div class="report-details" role="list">
+        <span role="listitem"><strong>Report Year:</strong> 2023</span>
+        <span role="listitem"><strong>Type:</strong> Annual</span>
+        <span role="listitem"><strong>Data Scope:</strong> Full Statements</span>
+      </div>
+    </div>
+    <div class="submitter-info">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="#6b7280" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      Submitted by Alex Johnson
+    </div>
   </section>
 
-  <section>
-    <h2>Combined Data</h2>
-    {{ table_html|safe }}
+  <!-- Cards -->
+  <section class="cards-row" aria-label="Summary Cards">
+    <article class="card card-overall" role="region" aria-labelledby="overall-fraud-status-title">
+      <div class="card-header-tag" style="background:#fde68a; color:#78350f;">Needs Further Review</div>
+      <h2 id="overall-fraud-status-title" style="font-weight:600; margin-bottom:6px;">Overall Fraud Status</h2>
+      <div class="status">Review Needed</div>
+    </article>
+
+    <article class="card card-mscore" role="region" aria-labelledby="mscore-title">
+      <div class="label" id="mscore-title">M-Score (Beneish)</div>
+      <div class="score">-2.11</div>
+      <div class="threshold">Threshold: -2.22</div>
+      <div class="warning">
+        <svg aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.516 11.59c.75 1.334-.213 3.011-1.742 3.011H3.483c-1.53 0-2.492-1.678-1.742-3.011L8.257 3.1zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-.25-5.75v3.5h-1.5v-3.5h1.5z"/></svg>
+        Close to warning threshold
+      </div>
+    </article>
+
+    <article class="card card-benford" role="region" aria-labelledby="benford-title">
+      <div class="label" id="benford-title">Benford Deviation</div>
+      <div class="level">Medium</div>
+      <div class="mad">MAD: 0.013</div>
+      <div class="note">Notable deviation</div>
+    </article>
+
+    <article class="card card-aggregated" role="region" aria-labelledby="aggregated-title">
+      <div class="label" id="aggregated-title">Aggregated Score</div>
+      <div class="score">76 / 100</div>
+      <div class="risk">Risk Level: Moderate</div>
+      <a href="#" aria-label="See indicator details">See indicator details</a>
+    </article>
   </section>
 
-  <section>
-    <h2>Extracted Data (Sheet: Thuyết minh)</h2>
-    {{ extracted_html|safe }}
+  <!-- Charts Row -->
+  <section class="charts-row" aria-label="Charts Section">
+    <section class="chart-container" role="region" aria-labelledby="key-indicator-title">
+      <div class="chart-header">
+        <div id="key-indicator-title">Key Indicator Trends</div>
+        <a href="#" aria-label="Expand Key Indicator Trends">Expand</a>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <span><span class="legend-color legend-mscore"></span>M-Score</span>
+        <span><span class="legend-color legend-benford"></span>Benford MAD</span>
+        <span><span class="legend-color legend-indicator"></span>Indicator Score</span>
+      </div>
+      <div class="line-chart" aria-label="Line chart showing trends from 2020 to 2023"></div>
+    </section>
+
+    <section class="chart-container" role="region" aria-labelledby="suspicious-points-title">
+      <div class="chart-header">
+        <div id="suspicious-points-title">Suspicious Points Heatmap</div>
+        <a href="#" aria-label="Expand Suspicious Points Heatmap">Expand</a>
+      </div>
+      <div class="heatmap-grid" aria-label="Suspicious Points Heatmap">
+        <div></div><div class="heatmap-year">2020</div><div class="heatmap-year">2021</div><div class="heatmap-year">2022</div><div class="heatmap-year">2023</div>
+        <div class="heatmap-label">Net Profit</div>
+        <div class="heatmap-block green" aria-label="2020 Net Profit"></div>
+        <div class="heatmap-block yellow" aria-label="2021 Net Profit"></div>
+        <div class="heatmap-block red" aria-label="2022 Net Profit"></div>
+        <div class="heatmap-block red" aria-label="2023 Net Profit"></div>
+        <div class="heatmap-label">Misc Income</div>
+        <div class="heatmap-block green" aria-label="2020 Misc Income"></div>
+        <div class="heatmap-block yellow" aria-label="2021 Misc Income"></div>
+        <div class="heatmap-block yellow" aria-label="2022 Misc Income"></div>
+        <div class="heatmap-block red" aria-label="2023 Misc Income"></div>
+        <div class="heatmap-label">Receivables</div>
+        <div class="heatmap-block green" aria-label="2020 Receivables"></div>
+        <div class="heatmap-block green" aria-label="2021 Receivables"></div>
+        <div class="heatmap-block yellow" aria-label="2022 Receivables"></div>
+        <div class="heatmap-block red" aria-label="2023 Receivables"></div>
+      </div>
+    </section>
   </section>
 
-  <p><a href="{{ url_for('index') }}">Back to Upload</a></p>
+  <!-- Bottom Row -->
+  <section class="bottom-row" aria-label="Detailed Analysis Section">
+    <!-- Left Column -->
+    <div class="left-column">
+      <section class="mscore-analysis" role="region" aria-labelledby="mscore-analysis-title">
+        <div class="expand-link" tabindex="0" role="button" aria-label="Expand M-Score Analysis">Expand</div>
+        <h3 id="mscore-analysis-title" style="margin-top:0; font-weight:700; margin-bottom:8px;">M-Score Analysis</h3>
+        <div>
+          <span class="mscore-current">-2.11</span>
+          <span class="warning-label">Warning</span>
+        </div>
+        <div class="threshold-volatility">
+          <span>Threshold: -2.22</span>
+          <svg aria-hidden="true" fill="#22c55e" viewBox="0 0 24 24" style="width:14px; height:14px;">
+            <path d="M12 2l7 7h-4v7h-6v-7H5l7-7z" />
+          </svg>
+          <span>Volatility: ↑</span>
+        </div>
+        <div class="contrib-factors">
+          <strong>Contributing Factors:</strong>
+          <ul>
+            <li>High Days Sales in Receivables Index</li>
+            <li>Increased Asset Quality Index</li>
+            <li>Stable Gross Margin Index</li>
+          </ul>
+        </div>
+        <div class="yoy-value">Year-over-year: +0.08</div>
+        <div class="small-line-graph" aria-label="Small line graph showing rising trend"></div>
+      </section>
+
+      <section class="benford-analysis" role="region" aria-labelledby="benford-analysis-title">
+        <h3 id="benford-analysis-title" class="benford-title">Benford Analysis</h3>
+        <div><strong>MAD Deviation:</strong> 0.013, Deviation Level: Medium</div>
+        <div class="benford-charts" aria-hidden="true">
+          <div class="benford-chart" aria-label="Benford Bar Chart"></div>
+          <div class="benford-chart" aria-label="Benford Line Chart"></div>
+        </div>
+        <div class="benford-legend">
+          <span><span class="benford-legend-color benford-actual"></span>Actual</span>
+          <span><span class="benford-legend-color benford-expected"></span>Expected</span>
+        </div>
+      </section>
+
+      <section class="financial-ratios" role="region" aria-labelledby="financial-ratios-title">
+        <h3 id="financial-ratios-title">Unusual Financial Ratios</h3>
+        <ul>
+          <li><span class="highlight-red">↑ 19% (YoY)</span> Receivables/Sales Ratio</li>
+          <li><span class="highlight-orange">↓ 4% (YoY)</span> Gross Margin</li>
+          <li><span class="highlight-green">Stable</span> Current Ratio</li>
+        </ul>
+      </section>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+      <section class="info-block" role="region" aria-labelledby="balance-sheet-title">
+        <h3 id="balance-sheet-title">Balance Sheet</h3>
+        <ul>
+          <li><span class="highlight-red">Accounts Receivable +17% spike</span></li>
+          <li><span class="highlight-orange">Inventory: Volatile trend</span></li>
+          <li><span class="highlight-green">Equity: Stable</span></li>
+        </ul>
+      </section>
+
+      <section class="info-block" role="region" aria-labelledby="income-statement-title">
+        <h3 id="income-statement-title">Income Statement</h3>
+        <ul>
+          <li><span class="highlight-red">Misc Income: Abnormal spike</span></li>
+          <li>Net Profit: High YoY Volatility</li>
+        </ul>
+      </section>
+
+      <section class="info-block" role="region" aria-labelledby="cashflow-statement-title">
+        <h3 id="cashflow-statement-title">Cash Flow Statement</h3>
+        <ul>
+          <li><span class="highlight-red">Profit vs. Cash Flow: Significant discrepancy</span></li>
+          <li>Operating Cash Flow: Below expected</li>
+        </ul>
+      </section>
+
+      <section class="info-block" role="region" aria-labelledby="notes-title">
+        <h3 id="notes-title">Notes &amp; Disclosures</h3>
+        <ul>
+          <li>Mismatch in asset valuation notes</li>
+          <li><span class="highlight-red">Unexplained adjustment entries</span></li>
+        </ul>
+      </section>
+    </div>
+  </section>
+
+  <!-- Recommendations & Next Steps -->
+  <section class="recommendations" role="region" aria-labelledby="recommendations-title">
+    <h3 id="recommendations-title">Recommendations &amp; Next Steps</h3>
+    <ul>
+      <li>Initiate management discussion for accounts receivable justifications</li>
+      <li>Conduct deeper audit on miscellaneous income &amp; cash flow discrepancies</li>
+      <li>Review and clarify adjustment entries in notes</li>
+    </ul>
+    <div class="rec-buttons">
+      <button class="btn-blue" aria-label="Notify Management">Notify Management</button>
+      <button class="btn-white" aria-label="Reference Materials">Reference Materials</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  © 2024 FraudDetect Pro — Financial Report Fraud Detection Platform. All rights reserved.
+</footer>
 </body>
 </html>
