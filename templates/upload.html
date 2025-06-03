@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel='stylesheet' href='https://cdn-uicons.flaticon.com/3.0.0/uicons-bold-rounded/css/uicons-bold-rounded.css'>
+<link rel='stylesheet' href='https://cdn-uicons.flaticon.com/3.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+<link rel='stylesheet' href='https://cdn-uicons.flaticon.com/3.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Financial Fraud Detection System</title>
+<style> 
+  :root {
+    --color-primary: #1e40af;
+    --color-primary-light: #3b82f6;
+    --color-primary-dark: #1b399c;
+    --color-text-main: #4f5871;
+    --color-text-muted: #6c6c6c;
+    --color-text-light: #9e9e9e;
+    --color-bg: #f1f6fb;
+    --border-radius: 6px;
+    --border-radius-lg: 12px;
+    --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-family);
+    background-color: var(--color-bg);
+    color: var(--color-text-main);
+  }
+
+  h1, h3 {
+    color: var(--color-primary);
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 8px 0;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  h3 {
+    margin-bottom: 12px;
+  }
+
+  p, li, a {
+    font-size: 14px;
+    color: var(--color-text-main);
+    margin: 0;
+  }
+
+  p.subtitle {
+    color: var(--color-text-muted);
+    margin-bottom: 32px;
+  }
+
+  a {
+    color: var(--color-primary-light);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  header{
+    background: #fff;
+    padding: 10px 20px;
+    font-size: 14px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--color-primary);
+  }
+
+  footer {
+    background-color: #fff;
+    padding: 20px 0;
+    text-align: center;
+    font-size: 12px;
+    border-top: 1px solid #eaeaea;
+    margin-top: 80px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    color: #a3a3a3;
+  }
+
+  .logo, .footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--color-primary);
+  }
+
+  .footer-logo {
+    align-items: center;
+    font-weight: 500;
+    font-size: 14px;
+    color: #1e40af;
+  }
+
+  .footer-logo .version {
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--color-text-light);
+  }
+
+  .profile-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+    margin-left: 20px;
+  }
+
+  nav {
+    display: flex;
+    gap: 20px;
+    font-weight: 600;
+    align-items: center;
+    color: var(--color-primary);
+  }
+
+  main {
+    max-width: 720px;
+    margin: 50px auto;
+    padding: 0 20px;
+    text-align: center;
+  }
+
+  .upload-box {
+    background: #fff;
+    border-radius: var(--border-radius-lg);
+    padding: 40px 24px 30px;
+    box-shadow: 0 3px 10px rgba(99, 98, 98, 0.1);
+    margin-bottom: 40px;
+  }
+
+  .upload-label {
+    width: 100%;
+    box-sizing: border-box;
+    border: 2px dashed #9db7ff;
+    border-radius: var(--border-radius);
+    padding: 60px 16px;
+    cursor: pointer;
+    text-align: center;
+    color: var(--color-primary-light);
+    font-weight: 600;
+    user-select: none;
+    display: block;
+    margin: 0 0 20px;
+  }
+
+  .upload-label svg {
+    margin-bottom: 16px;
+  }
+
+  .upload-label p {
+    margin: 8px 0;
+  }
+
+  .upload-label button,
+  .upload-label .analyze-btn {
+    background-color: var(--color-primary-light);
+    color: #fff;
+    border: none;
+    padding: 8px 18px;
+    font-weight: 600;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .upload-label button:hover,
+  .upload-label .analyze-btn:hover {
+    background-color: var(--color-primary-dark);
+  }
+
+  .info-text {
+    font-size: 12px;
+    color: var(--color-text-light);
+    line-height: 1.4;
+  }
+
+  .info-text strong {
+    color: #3b82f6;
+  }
+
+  .guide-section {
+    display: flex;
+    gap: 150px;
+    align-items: flex-start;
+    margin-bottom: 30px;
+  }
+
+  .guide-text {
+    flex: 1 1 50%;
+    text-align: left;
+    color: var(--color-text-main);
+  }
+
+  .guide-text ol {
+    padding-left: 13px;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .guide-text ol li {
+    margin-bottom: 10px;
+  }
+
+  .guide-image {
+    flex: 1 1 40%;
+    max-width: 160px;
+  }
+
+  .guide-image img {
+    width: 100%;
+    border-radius: var(--border-radius);
+  }
+
+  .support-links {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-primary-light);
+    align-items: center;
+  }
+
+  .support-links a {
+    text-decoration: none;
+    color: var(--color-primary-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    padding: 0 16px;
+  }
+
+  .support-links a:hover {
+    text-decoration: underline;
+  }
+
+  /* Dấu phân cách đứng | cho tất cả link trừ link đầu */
+  .support-links a:not(:first-child)::before {
+    content: "|";
+    color: var(--color-primary-light);
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 600;
+  }
+
+  .support-links svg {
+    width: 16px;
+    height: 16px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <i class="fi fi-rr-spy" style="font-size: 20px;"></i>
+      FraudDetect Pro
+    </div>
+    <nav>
+      <a href="#">Help</a>
+      <a href="#">FAQ</a>
+      <a href="#">Support</a>
+      <img src="https://i.pravatar.cc/32" alt="profile" class="profile-img" />
+    </nav>
+  </header>
+  <main>
+    <h1>Welcome to the Financial Fraud<br />Detection System</h1>
+    <p class="subtitle">Please upload your financial report to start the analysis.</p>
+
+    <div class="upload-box">
+      <form action="/" method="post" enctype="multipart/form-data">
+        <label for="file" class="upload-label">
+          <i id="upload-icon" class="fi fi-br-upload" style="font-size: 50px;"></i>
+          <p id="drag-drop-text"><strong>Drag & drop your file here</strong></p>
+          <p id="or">or</p>
+          <button type="button" id="choose-btn" onclick="document.getElementById('file-upload').click()">Choose File</button>
+          <span id="file-name" style="display:none; margin-top:10px;"></span>
+          <button type="submit" id="analyze-btn" style="display:none; margin-top:10px;">Analyze</button>
+        </label>
+        <input type="file" id="file-upload" name="file-upload" accept=".pdf,.xls,.xlsx,.csv" style="display:none" />
+        <p class="info-text">
+          Accepted formats: <strong>PDF, Excel (XLS/XLSX), CSV</strong><br />
+          Maximum file size: <strong>50MB</strong><br />
+          You can select a file or drop it into the area above to begin.
+        </p>
+      </form>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-text">
+        <h3>How to upload:</h3>
+        <ol>
+          <li>Ensure your report is in one of the supported formats.</li>
+          <li>Click <a href="#">Choose File</a> or drag your file into the upload area.</li>
+          <li>Wait for upload confirmation, then let our AI-powered system begin the analysis.</li>
+        </ol>
+      </div>
+      <div class="guide-image">
+        <img src="https://cdn-icons-png.flaticon.com/512/3447/3447741.png" alt="Upload illustration" />
+      </div>
+    </div>
+
+    <nav class="support-links" aria-label="Support links">
+      <a href="#" aria-label="Help Center">
+        <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-help-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 1.5-1.5 2-2 3"/></svg>
+        Help Center
+      </a>
+      <a href="#" aria-label="FAQ">
+        <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="8"/></svg>
+        FAQ
+      </a>
+      <a href="#" aria-label="Customer Support">
+        <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-headphones" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0118 0v6"/><rect x="3" y="13" width="4" height="5" rx="1"/><rect x="17" y="13" width="4" height="5" rx="1"/></svg>
+        Customer Support
+      </a>
+    </nav>
+  </main>
+  <footer>
+    <div class="footer-content">
+      <div class="footer-logo">
+        <i class="fi fi-rr-spy" style="font-size: 20px;"></i>
+        <span>FraudDetect Pro</span>
+        <span class="version">v2.1.0</span>
+      </div>
+      <div class="footer-copy">
+        © 2025 FraudDetect Pro — k61.2213380042@ftu.edu.vn
+      </div>
+    </div>
+  </footer>
+  <script>
+const fileInput = document.getElementById('file-upload');
+const fileNameSpan = document.getElementById('file-name');
+const chooseBtn = document.getElementById('choose-btn');
+const analyzeBtn = document.getElementById('analyze-btn');
+const or = document.getElementById('or');
+const dragDropText = document.getElementById('drag-drop-text');
+const uploadIcon = document.getElementById('upload-icon');
+
+fileInput.addEventListener('change', function() {
+  if (fileInput.files.length > 0) {
+    let fileName = fileInput.files[0].name;
+    fileNameSpan.textContent = fileName;
+    fileNameSpan.style.display = 'block';
+    chooseBtn.style.display = 'none';
+    analyzeBtn.style.display = 'inline-block';
+    dragDropText.style.display = 'none';
+    or.style.display = 'none';
+    // Change icon to document after file is uploaded
+    uploadIcon.className = 'fi fi-rr-document';
+    uploadIcon.style.fontSize = '50px';
+  } else {
+    fileNameSpan.textContent = '';
+    fileNameSpan.style.display = 'none';
+    chooseBtn.style.display = 'inline-block';
+    analyzeBtn.style.display = 'none';
+    or.style.display = 'block';
+    dragDropText.style.display = 'block';
+    // Change icon back to upload if no file
+    uploadIcon.className = 'fi fi-br-upload';
+    uploadIcon.style.fontSize = '50px';
+  }
+});
+</script>
+</body>
+</html>

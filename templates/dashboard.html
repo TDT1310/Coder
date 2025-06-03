@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Analysis Result</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 20px;
+      color: #33475b;
+    }
+    h1 {
+      color: #1e40af;
+    }
+    pre {
+      background: #f7f7f7;
+      padding: 20px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>Analysis Result</h1>
+  <section>
+    <h2>M-Score Analysis</h2>
+    <pre>{{ result }}</pre>
+  </section>
+
+  <section>
+    <h2>Combined Data</h2>
+    {{ table_html|safe }}
+  </section>
+
+  <section>
+    <h2>Extracted Data (Sheet: Thuyết minh)</h2>
+    {{ extracted_html|safe }}
+  </section>
+
+  <p><a href="{{ url_for('index') }}">Back to Upload</a></p>
+</body>
+</html>
