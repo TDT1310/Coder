@@ -4,10 +4,10 @@ from flask import Flask, request, render_template, redirect, url_for, session
 from flask_session import Session
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import re
 import io
 import openpyxl
-import streamlit as st
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key" 
@@ -178,20 +178,7 @@ def compute_m_score(y1, y2, uploaded_file):
     elif m_score < -1.78:
       interpretation = "Possible Manipulation"
     else: interpretation = "Likely Manipulation"
-    result = f"""
-### M-score Analysis ({y1} ➞ {y2})
-- **DSRI**: {dsri_v}
-- **GMI**: {gmi_v}
-- **AQI**: {aqi_v}
-- **SGI**: {sgi_v}
-- **DEPI**: {depi_v}
-- **SGAI**: {sgai_v}
-- **LVGI**: {lvgi_v}
-- **TATA**: {tata_v}
-### **M-Score**: `{m_score}`
-{interpretation}
-"""
-    return result
+    return interpretation
 # ĐÂY LÀ PHẦN GIAO DIỆN
 
 @app.route("/", methods=["GET", "POST"])

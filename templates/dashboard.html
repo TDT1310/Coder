@@ -4,6 +4,8 @@
 <meta charset="UTF-8" />
 <!--Icon-->
 <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/3.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+<link rel='stylesheet' href='https://cdn-uicons.flaticon.com/3.0.0/uicons-thin-rounded/css/uicons-thin-rounded.css'>
+
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>FraudDetect Pro Dashboard</title>
 <style>
@@ -314,6 +316,17 @@
     .submitter-info { justify-content: flex-start; }
     .header-right { gap: 8px; }
   }
+  .card-header {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+  margin-bottom: 6px;
+  justify-content: center; /* or flex-start if you want left alignment */
+}
+.label {
+  font-weight: 600;
+  margin-bottom: 0; /* Remove bottom margin, handled by .card-header */
+}
 </style>
 </head>
 <body>
@@ -352,25 +365,33 @@
   <section class="cards-row" aria-label="Summary Cards">
     <article class="card" role="region" aria-labelledby="overall-fraud-status-title"
       style="background:white; color:#92400e;">
-      <i class="fi fi-rr-analytics-magnifying-glass", style="font-size: 20px;"></i>
-      <div class="label" id="mscore-title" style="font-weight:600; margin-bottom:6px;">Overall Fraud Status</div>
-      <div class="status" style="font-weight:700; font-size:1.25rem;">Review Needed</div>
+      <div class="card-header" style="flex-direction:column; gap:2px;">
+        <i class="fi fi-rr-analytics-magnifying-glass" style="font-size: 30px;"></i>
+        <div class="label" id="overall-fraud-status-title">Overall Fraud Status</div>
+        <div class="value" style="font-weight:700; font-size:1.5rem; margin-bottom:4px">Review Needed</div>
+      </div>
     </article>
 
     <article class="card" role="region" aria-labelledby="mscore-title"
       style="background:white; color:#78350f;">
-      <div class="label" id="mscore-title" style="font-weight:600; margin-bottom:6px;">M-Score (Beneish)</div>
-      <div class="score" style="font-size:2.5rem; font-weight:700; line-height:1; margin-bottom:4px;">-2.11</div>
-      <div class="threshold" style="font-size:0.875rem; color:#6b7280; margin-bottom:8px;">Threshold: -2.22</div>
-      <div class="warning" style="display:flex; align-items:center; gap:6px; font-size:0.875rem; color:#b45309; font-weight:600;"> Close to warning threshold</div>
+      <div class="card-header" style="flex-direction:column; gap:2px;">
+        <i class="fi fi-rr-chart-histogram" style="font-size: 30px;"></i>
+        <div class="label" id="mscore-title">M-Score (Beneish)</div>
+        <div class="value" style="font-size:1.5rem; font-weight:700; margin-bottom:4px">-2.11</div>
+      </div>
+      <div class="benchmark" style="font-size:0.875rem; color:#6b7280; margin-bottom:6px;">Threshold: -2.22</div>
+      <div class="warning" style="display: inline-block; font-size:0.75rem; color:#b45309; font-weight:600; background: #92400e; border-radius: 16px; padding: 2px 8px"> Close to warning threshold</div>
     </article>
 
     <article class="card" role="region" aria-labelledby="benford-title"
       style="background: white; color:#991b1b;">
-      <div class="label" id="benford-title" style="font-weight:600; margin-bottom:6px;">Benford Deviation</div>
-      <div class="level" style="font-weight:700; font-size:1.25rem; margin-bottom:4px;">Medium</div>
-      <div class="mad" style="font-size:0.875rem; color:#991b1b; margin-bottom:6px;">MAD: 0.013</div>
-      <div class="note" style="font-size:0.75rem; color:#991b1b; font-weight:600;">Notable deviation</div>
+      <div class="card-header" style="flex-direction:column; gap:2px;">
+        <i class="fi fi-rr-curve-arrow" style="font-size: 30px;"></i>
+        <div class="label" id="benford-title">Benford Deviation</div>
+        <div class="value" style="font-weight:700; font-size:1.5rem; margin-bottom:4px;">Medium</div>
+      </div>
+      <div class="benchmark" style="font-size:0.875rem; color:#991b1b; margin-bottom:6px;">MAD: 0.013</div>
+      <div class="warning" style="font-size:0.75rem; color:#991b1b; font-weight:600;">Notable deviation</div>
     </article>
   </section>
 
