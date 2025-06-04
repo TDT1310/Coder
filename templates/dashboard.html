@@ -98,11 +98,11 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 24px 0 24px;
+    padding: 24px 16px;
     border-bottom: 1px solid #e5e7eb;
     flex-wrap: wrap;
-    background: none;
-    border-radius: 0;
+    background: white;
+    border-radius: 8px;
     box-shadow: none;
   }
   .main-title-left {
@@ -144,48 +144,22 @@
     flex: 1 1 calc(25% - 12px);
     min-width: 260px;
     padding: 20px 16px;
+    text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
+    margin-bottom: 0;
   }
-  .card-header-tag {
-    display: inline-block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-  }
-  .card-overall { background: #fef3c7; color: #92400e; }
-  .card-overall .card-header-tag { background: #fde68a; color: #78350f; }
-  .card-overall .status { font-weight: 700; font-size: 1.25rem; }
-  .card-mscore { background: #fef9c3; color: #78350f; position: relative; }
-  .card-mscore .label, .card-benford .label, .card-aggregated .label { font-weight: 600; margin-bottom: 6px; }
-  .card-mscore .score { font-size: 2.5rem; font-weight: 700; line-height: 1; margin-bottom: 4px; }
-  .card-mscore .threshold { font-size: 0.875rem; color: #6b7280; margin-bottom: 8px; }
-  .card-mscore .warning {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 0.875rem; color: #b45309; font-weight: 600;
-  }
-  .card-mscore .warning svg { width: 16px; height: 16px; fill: #b45309; }
-  .card-benford { background: #fee2e2; color: #991b1b; }
-  .card-benford .level { font-weight: 700; font-size: 1.25rem; margin-bottom: 4px; }
-  .card-benford .mad { font-size: 0.875rem; color: #991b1b; margin-bottom: 6px; }
-  .card-benford .note { font-size: 0.75rem; color: #991b1b; font-weight: 600; }
-  .card-aggregated { background: #d1fae5; color: #065f46; display: flex; flex-direction: column; justify-content: space-between; }
-  .card-aggregated .score { font-weight: 700; font-size: 2rem; margin-bottom: 4px; }
-  .card-aggregated .risk { font-size: 0.875rem; margin-bottom: 6px; }
-  .card-aggregated a { font-weight: 600; font-size: 0.875rem; color: #2563eb; }
   .chart-container {
     flex: 1 1 48%;
     min-width: 320px;
     padding: 20px 24px;
     position: relative;
   }
-  .chart-header {
+  .chart-hearde {
     font-weight: 700;
     font-size: 1.125rem;
     margin-bottom: 12px;
@@ -374,34 +348,27 @@
 
   <!-- Cards -->
   <section class="cards-row" aria-label="Summary Cards">
-    <article class="card card-overall" role="region" aria-labelledby="overall-fraud-status-title">
+    <article class="card" role="region" aria-labelledby="overall-fraud-status-title"
+      style="background:white; color:#92400e;">
       <div class="card-header-tag" style="background:#fde68a; color:#78350f;">Needs Further Review</div>
       <h2 id="overall-fraud-status-title" style="font-weight:600; margin-bottom:6px;">Overall Fraud Status</h2>
-      <div class="status">Review Needed</div>
+      <div class="status" style="font-weight:700; font-size:1.25rem;">Review Needed</div>
     </article>
 
-    <article class="card card-mscore" role="region" aria-labelledby="mscore-title">
-      <div class="label" id="mscore-title">M-Score (Beneish)</div>
-      <div class="score">-2.11</div>
-      <div class="threshold">Threshold: -2.22</div>
-      <div class="warning">
-        <svg aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.516 11.59c.75 1.334-.213 3.011-1.742 3.011H3.483c-1.53 0-2.492-1.678-1.742-3.011L8.257 3.1zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-.25-5.75v3.5h-1.5v-3.5h1.5z"/></svg>
-        Close to warning threshold
-      </div>
+    <article class="card" role="region" aria-labelledby="mscore-title"
+      style="background:white; color:#78350f;">
+      <div class="label" id="mscore-title" style="font-weight:600; margin-bottom:6px;">M-Score (Beneish)</div>
+      <div class="score" style="font-size:2.5rem; font-weight:700; line-height:1; margin-bottom:4px;">-2.11</div>
+      <div class="threshold" style="font-size:0.875rem; color:#6b7280; margin-bottom:8px;">Threshold: -2.22</div>
+      <div class="warning" style="display:flex; align-items:center; gap:6px; font-size:0.875rem; color:#b45309; font-weight:600;"> Close to warning threshold</div>
     </article>
 
-    <article class="card card-benford" role="region" aria-labelledby="benford-title">
-      <div class="label" id="benford-title">Benford Deviation</div>
-      <div class="level">Medium</div>
-      <div class="mad">MAD: 0.013</div>
-      <div class="note">Notable deviation</div>
-    </article>
-
-    <article class="card card-aggregated" role="region" aria-labelledby="aggregated-title">
-      <div class="label" id="aggregated-title">Aggregated Score</div>
-      <div class="score">76 / 100</div>
-      <div class="risk">Risk Level: Moderate</div>
-      <a href="#" aria-label="See indicator details">See indicator details</a>
+    <article class="card" role="region" aria-labelledby="benford-title"
+      style="background: white; color:#991b1b;">
+      <div class="label" id="benford-title" style="font-weight:600; margin-bottom:6px;">Benford Deviation</div>
+      <div class="level" style="font-weight:700; font-size:1.25rem; margin-bottom:4px;">Medium</div>
+      <div class="mad" style="font-size:0.875rem; color:#991b1b; margin-bottom:6px;">MAD: 0.013</div>
+      <div class="note" style="font-size:0.75rem; color:#991b1b; font-weight:600;">Notable deviation</div>
     </article>
   </section>
 
