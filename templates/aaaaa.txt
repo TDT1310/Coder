@@ -1,0 +1,10 @@
+Warning Back: #fef9c3 orr #dbeafe
+
+Sumary Icon: #eab308
+Sumary ressult: #a16207
+
+Beneish Icon: #3b82f6
+Benish Value: #1d4ed8
+
+Benford Icon: #ec4899
+Benford Value: #be1862
