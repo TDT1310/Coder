@@ -30,11 +30,6 @@
     margin: 0 auto;
     padding: 20px 16px 60px;
   }
-  header, .main-title, .cards-row, .charts-row, .bottom-row, .recommendations, .info-block, .benford-analysis, .financial-ratios, .mscore-analysis, .chart-container {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
-  }
   header {
     display: flex;
     justify-content: space-between;
@@ -135,7 +130,7 @@
     height: 18px;
     fill: #6b7280;
   }
-  .cards-row, .charts-row, .bottom-row {
+  .cards-row, .bottom-row {
     display: flex;
     gap: 16px;
     margin: 24px 0;
@@ -157,61 +152,6 @@
     box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
     margin-bottom: 0;
   }
-  .chart-container {
-    flex: 1 1 48%;
-    min-width: 320px;
-    padding: 20px 24px;
-    position: relative;
-  }
-  .chart-hearde {
-    font-weight: 700;
-    font-size: 1.125rem;
-    margin-bottom: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .chart-header a { font-size: 0.875rem; color: #2563eb; font-weight: 600; }
-  .line-chart, .heatmap, .benford-chart {
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    background: #f3f4f6;
-    position: relative;
-  }
-  .line-chart { height: 150px; }
-  .heatmap { height: 150px; }
-  .benford-chart { height: 80px; }
-  .legend, .benford-legend {
-    display: flex;
-    gap: 16px;
-    font-size: 0.75rem;
-    margin-bottom: 8px;
-    color: #6b7280;
-  }
-  .legend span, .benford-legend span { display: flex; align-items: center; gap: 6px; }
-  .legend-color, .benford-legend-color {
-    width: 12px; height: 12px; border-radius: 2px; display: inline-block;
-  }
-  .legend-mscore { background: #2563eb; }
-  .legend-benford { background: #dc2626; }
-  .legend-indicator { background: #16a34a; }
-  .benford-actual { background: #2563eb; }
-  .benford-expected { background: #6b7280; }
-  .heatmap-grid {
-    display: grid;
-    grid-template-columns: 60px repeat(4, 1fr);
-    grid-auto-rows: 28px;
-    gap: 4px;
-    font-size: 0.75rem;
-    color: #374151;
-  }
-  .heatmap-label, .heatmap-year { font-weight: 600; display: flex; align-items: center; }
-  .heatmap-year { text-align: center; line-height: 28px; }
-  .heatmap-block { border-radius: 4px; }
-  .heatmap-block.green { background-color: #bbf7d0; }
-  .heatmap-block.yellow { background-color: #fde68a; }
-  .heatmap-block.red { background-color: #fecaca; }
-  .bottom-row { gap: 16px; }
   .left-column, .right-column {
     flex: 1 1 48%;
     min-width: 320px;
@@ -219,13 +159,12 @@
     flex-direction: column;
     gap: 16px;
   }
-  .mscore-analysis, .benford-analysis, .financial-ratios, .info-block, .recommendations {
+  .mscore-analysis, .benford-analysis, .recommendations {
     padding: 16px 20px;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
   }
-  .mscore-analysis { position: relative; }
   .expand-link {
     position: absolute;
     top: 16px;
@@ -261,36 +200,21 @@
   .contrib-factors li { margin-bottom: 6px; }
   .yoy-value { font-weight: 600; font-size: 0.875rem; color: #2563eb; margin-bottom: 8px; }
   .small-line-graph { height: 50px; background: linear-gradient(to right, #dbeafe, #2563eb); border-radius: 6px; }
-  .info-block h3, .benford-analysis h3, .financial-ratios h3, .recommendations h3 {
+  .benford-analysis h3, .recommendations h3 {
     font-weight: 700;
     font-size: 1rem;
     margin: 0 0 12px 0;
     color: #1f2937;
   }
-  .info-block ul, .recommendations ul {
-    margin: 0;
-    padding-left: 20px;
-    list-style-type: disc;
-    color: #374151;
+  .recommendations {
+    padding: 20px 24px;
+    margin-top: 24px;
   }
-  .info-block ul li, .recommendations ul li, .financial-ratios li {
+  .recommendations ul { margin-bottom: 20px; padding-left: 20px; list-style-type: disc; color: #374151; }
+  .recommendations ul li {
     margin-bottom: 6px;
     font-size: 0.875rem;
   }
-  .highlight-red { color: #dc2626; font-weight: 700; }
-  .highlight-orange { color: #ea580c; font-weight: 600; }
-  .highlight-green { color: #16a34a; font-weight: 600; }
-  .highlight-blue { color: #2563eb; font-weight: 600; }
-  .financial-ratios ul { list-style: none; padding: 0; margin: 0; }
-  .arrow-up { display: inline-block; color: #dc2626; font-weight: 700; margin-right: 4px; }
-  .arrow-down { display: inline-block; color: #ea580c; font-weight: 600; margin-right: 4px; }
-  .stable-green { color: #16a34a; font-weight: 600; }
-  .recommendations {
-    padding: 20px 24px;
-    max-width: 480px;
-    margin-left: auto;
-  }
-  .recommendations ul { margin-bottom: 20px; }
   .rec-buttons { display: flex; gap: 12px; }
   /* Footer */
   footer {
@@ -301,13 +225,10 @@
     color: #6b7280;
     border-top: 1px solid #e5e7eb;
   }
-  /* Icons used inline SVG */
   svg.icon { vertical-align: middle; }
-  /* Responsive */
   @media (max-width: 1024px) {
-    .cards-row, .charts-row, .bottom-row { flex-wrap: wrap; }
+    .cards-row, .bottom-row { flex-wrap: wrap; }
     .card { flex: 1 1 45%; }
-    .chart-container { flex: 1 1 100%; min-width: auto; }
     .left-column, .right-column { flex: 1 1 100%; min-width: auto; }
     .recommendations { margin-left: 0; max-width: 100%; }
   }
@@ -316,17 +237,6 @@
     .submitter-info { justify-content: flex-start; }
     .header-right { gap: 8px; }
   }
-  .card-header {
-  display: flex;
-  align-items: center;
-  gap: 0px;
-  margin-bottom: 6px;
-  justify-content: center; /* or flex-start if you want left alignment */
-}
-.label {
-  font-weight: 600;
-  margin-bottom: 0; /* Remove bottom margin, handled by .card-header */
-}
 </style>
 </head>
 <body>
@@ -346,7 +256,7 @@
 </header>
 
 <main class="container">
-  <section class="main-title" aria-labelledby="dashbo                                                                                                                                                     ard-                                           title">
+  <section class="main-title" aria-labelledby="dashboard-title">
     <div class="main-title-left">
       <h1 id="dashboard-title">Financial Report Fraud Analysis</h1>
       <div class="report-details" role="list">
@@ -424,6 +334,7 @@
         <div class="yoy-value">Year-over-year: +0.08</div>
         <div class="small-line-graph" aria-label="Small line graph showing rising trend"></div>
       </section>
+    </div>
 
     <!-- Right Column -->
     <div class="right-column">
@@ -439,19 +350,10 @@
           <span><span class="benford-legend-color benford-expected"></span>Expected</span>
         </div>
       </section>
-
-      <section class="financial-ratios" role="region" aria-labelledby="financial-ratios-title">
-        <h3 id="financial-ratios-title">Unusual Financial Ratios</h3>
-        <ul>
-          <li><span class="highlight-red">↑ 19% (YoY)</span> Receivables/Sales Ratio</li>
-          <li><span class="highlight-orange">↓ 4% (YoY)</span> Gross Margin</li>
-          <li><span class="highlight-green">Stable</span> Current Ratio</li>
-        </ul>
-      </section>
     </div>
   </section>
 
-  <!-- Recommendations & Next Steps -->
+  <!-- Recommendations & Next Steps (moved outside .bottom-row for full width) -->
   <section class="recommendations" role="region" aria-labelledby="recommendations-title">
     <h3 id="recommendations-title">Recommendations &amp; Next Steps</h3>
     <ul>
