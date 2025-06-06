@@ -395,48 +395,7 @@
     </article>
   </section>
 
-  <!-- Charts Row -->
-  <section class="charts-row" aria-label="Charts Section">
-    <section class="chart-container" role="region" aria-labelledby="key-indicator-title">
-      <div class="chart-header">
-        <div id="key-indicator-title">Key Indicator Trends</div>
-        <a href="#" aria-label="Expand Key Indicator Trends">Expand</a>
-      </div>
-      <div class="legend" aria-hidden="true">
-        <span><span class="legend-color legend-mscore"></span>M-Score</span>
-        <span><span class="legend-color legend-benford"></span>Benford MAD</span>
-        <span><span class="legend-color legend-indicator"></span>Indicator Score</span>
-      </div>
-      <div class="line-chart" aria-label="Line chart showing trends from 2020 to 2023"></div>
-    </section>
-
-    <section class="chart-container" role="region" aria-labelledby="suspicious-points-title">
-      <div class="chart-header">
-        <div id="suspicious-points-title">Suspicious Points Heatmap</div>
-        <a href="#" aria-label="Expand Suspicious Points Heatmap">Expand</a>
-      </div>
-      <div class="heatmap-grid" aria-label="Suspicious Points Heatmap">
-        <div></div><div class="heatmap-year">2020</div><div class="heatmap-year">2021</div><div class="heatmap-year">2022</div><div class="heatmap-year">2023</div>
-        <div class="heatmap-label">Net Profit</div>
-        <div class="heatmap-block green" aria-label="2020 Net Profit"></div>
-        <div class="heatmap-block yellow" aria-label="2021 Net Profit"></div>
-        <div class="heatmap-block red" aria-label="2022 Net Profit"></div>
-        <div class="heatmap-block red" aria-label="2023 Net Profit"></div>
-        <div class="heatmap-label">Misc Income</div>
-        <div class="heatmap-block green" aria-label="2020 Misc Income"></div>
-        <div class="heatmap-block yellow" aria-label="2021 Misc Income"></div>
-        <div class="heatmap-block yellow" aria-label="2022 Misc Income"></div>
-        <div class="heatmap-block red" aria-label="2023 Misc Income"></div>
-        <div class="heatmap-label">Receivables</div>
-        <div class="heatmap-block green" aria-label="2020 Receivables"></div>
-        <div class="heatmap-block green" aria-label="2021 Receivables"></div>
-        <div class="heatmap-block yellow" aria-label="2022 Receivables"></div>
-        <div class="heatmap-block red" aria-label="2023 Receivables"></div>
-      </div>
-    </section>
-  </section>
-
-  <!-- Bottom Row -->
+  <!-- Analysis row -->
   <section class="bottom-row" aria-label="Detailed Analysis Section">
     <!-- Left Column -->
     <div class="left-column">
@@ -466,6 +425,8 @@
         <div class="small-line-graph" aria-label="Small line graph showing rising trend"></div>
       </section>
 
+    <!-- Right Column -->
+    <div class="right-column">
       <section class="benford-analysis" role="region" aria-labelledby="benford-analysis-title">
         <h3 id="benford-analysis-title" class="benford-title">Benford Analysis</h3>
         <div><strong>MAD Deviation:</strong> 0.013, Deviation Level: Medium</div>
@@ -485,42 +446,6 @@
           <li><span class="highlight-red">↑ 19% (YoY)</span> Receivables/Sales Ratio</li>
           <li><span class="highlight-orange">↓ 4% (YoY)</span> Gross Margin</li>
           <li><span class="highlight-green">Stable</span> Current Ratio</li>
-        </ul>
-      </section>
-    </div>
-
-    <!-- Right Column -->
-    <div class="right-column">
-      <section class="info-block" role="region" aria-labelledby="balance-sheet-title">
-        <h3 id="balance-sheet-title">Balance Sheet</h3>
-        <ul>
-          <li><span class="highlight-red">Accounts Receivable +17% spike</span></li>
-          <li><span class="highlight-orange">Inventory: Volatile trend</span></li>
-          <li><span class="highlight-green">Equity: Stable</span></li>
-        </ul>
-      </section>
-
-      <section class="info-block" role="region" aria-labelledby="income-statement-title">
-        <h3 id="income-statement-title">Income Statement</h3>
-        <ul>
-          <li><span class="highlight-red">Misc Income: Abnormal spike</span></li>
-          <li>Net Profit: High YoY Volatility</li>
-        </ul>
-      </section>
-
-      <section class="info-block" role="region" aria-labelledby="cashflow-statement-title">
-        <h3 id="cashflow-statement-title">Cash Flow Statement</h3>
-        <ul>
-          <li><span class="highlight-red">Profit vs. Cash Flow: Significant discrepancy</span></li>
-          <li>Operating Cash Flow: Below expected</li>
-        </ul>
-      </section>
-
-      <section class="info-block" role="region" aria-labelledby="notes-title">
-        <h3 id="notes-title">Notes &amp; Disclosures</h3>
-        <ul>
-          <li>Mismatch in asset valuation notes</li>
-          <li><span class="highlight-red">Unexplained adjustment entries</span></li>
         </ul>
       </section>
     </div>

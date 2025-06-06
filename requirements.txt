@@ -1,0 +1,7 @@
+Flask
+Flask-Session
+pandas
+numpy
+matplotlib
+openpyxl
+rapidfuzz

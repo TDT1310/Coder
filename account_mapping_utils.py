@@ -1,9 +1,15 @@
+from pathlib import Path
 import pandas as pd
 import unicodedata
 from rapidfuzz import process, fuzz
 
 # Load your mapping from Excel file
-def load_account_mapping(filepath=r'D:\Học hành\Coder\Data\account_mapping.xlsx', sheet_name=0):
+def load_account_mapping(filepath=None, sheet_name=0):
+    if filepath is None:
+        # Default to a relative path in the project directory
+        filepath = Path(__file__).parent / "Data" / "account_mapping.xlsx"
+    else:
+        filepath = Path(filepath)
     mapping_df = pd.read_excel(filepath, sheet_name=sheet_name)
     # Build mapping dictionary
     standard_account_map = {}

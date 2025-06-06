@@ -8,16 +8,19 @@ import matplotlib.pyplot as plt
 import re
 import io
 import openpyxl
+from pathlib import Path
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key" 
 app.config["SESSION_TYPE"] = "filesystem"  
 Session(app)
 
+# Standardize the path for account mapping
+MAPPING_PATH = Path(__file__).parent / "Data" / "account_mapping.xlsx"
+standard_account_map, reverse_map, all_std_normalized, all_variant_normalized = setup_account_mapping(MAPPING_PATH, sheet_name=0)
+
 # DEF MỘT SỐ HÀM
 # Data extract
-
-standard_account_map, reverse_map, all_std_normalized, all_variant_normalized = setup_account_mapping(r'D:\Học hành\Coder\Data\account_mapping.xlsx', sheet_name=0)
 
 def dedup_names(names):
     counts = {}
@@ -122,7 +125,7 @@ def transformer (uploaded_file):
     #Kết hợp và ghi vào file excel mới
     final_data = pd.concat(combined_data, ignore_index=False)
     final_data.index = final_data.index.str.lower()
-    #final_data.to_excel("final_data.xlsx", index=True)
+    final_data.to_excel("final_data.xlsx", index=True)
     return final_data
 
 # Function to calculate all M-score inputs and result
