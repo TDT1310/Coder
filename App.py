@@ -4,11 +4,15 @@ from flask import Flask, request, render_template, redirect, url_for, session
 from flask_session import Session
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-GUI backend for server
 import matplotlib.pyplot as plt
 import re
 import io
 import openpyxl
 from pathlib import Path
+import base64
+from io import BytesIO
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key" 
@@ -125,64 +129,117 @@ def transformer (uploaded_file):
     #Kết hợp và ghi vào file excel mới
     final_data = pd.concat(combined_data, ignore_index=False)
     final_data.index = final_data.index.str.lower()
-    final_data.to_excel("final_data.xlsx", index=True)
     return final_data
 
 # Function to calculate all M-score inputs and result
-def compute_m_score(y1, y2, uploaded_file):
-    # Load CSV
-    df = uploaded_file
-    y1 = str(y1)
-    y2 = str(y2)
-    year_cols = [col for col in df.columns if re.match(r'^20\d{2}|19\d{2}$', str(col))]
-    data_dict = df[year_cols].to_dict(orient='index')
-    # Get function
-    def get(item, year):
-        return robust_get (item, year, data_dict, reverse_map, all_std_normalized, all_variant_normalized)
-    # Detect year columns
-    year_columns = [col for col in df.columns if type(col) == int]
-    year_columns.sort() 
-    def dsri():
-        return (get("bảng cân đối kế toán - các khoản phải thu", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("bảng cân đối kế toán - các khoản phải thu", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
-    def gmi():
-        gm_t = (get("kết quả kinh doanh - doanh thu thuần", y2) - get("kết quả kinh doanh - giá vốn hàng bán", y2)) / get("kết quả kinh doanh - doanh thu thuần", y2)
-        gm_t1 = (get("kết quả kinh doanh - doanh thu thuần", y1) - get("kết quả kinh doanh - giá vốn hàng bán", y1)) / get("kết quả kinh doanh - doanh thu thuần", y1)
-        return gm_t1 / gm_t
-    def aqi():
-        num_t = 1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y2) + get("bảng cân đối kế toán - tài sản cố định", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)
-        num_t1 = 1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y1) + get("bảng cân đối kế toán - tài sản cố định", y1)) / get("bảng cân đối kế toán - tổng cộng tài sản", y1)
-        return num_t / num_t1
-    def sgi():
-        return get("kết quả kinh doanh - doanh thu thuần", y2) / get("kết quả kinh doanh - doanh thu thuần", y1)
-    def depi():
-        rate_t = get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y2) / (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y2) + get("bảng cân đối kế toán - tài sản cố định", y2))
-        rate_t1 = get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y1) / (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y1) + get("bảng cân đối kế toán - tài sản cố định", y1))
-        return rate_t1 / rate_t
-    def sgai():
-        return (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
-    def lvgi():
-        return (get("bảng cân đối kế toán - nợ phải trả", y2) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (get("bảng cân đối kế toán - nợ phải trả", y1) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
-    def tata():
-        return (get("kết quả kinh doanh - lãi/(lỗ) thuần sau thuế", y2) - get("lưu chuyển tiền tệ - lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)
-    # Compute all inputs
-    dsri_v = round(dsri(), 4)
-    gmi_v = round(gmi(), 4)
-    aqi_v = round(aqi(), 4)
-    sgi_v = round(sgi(), 4)
-    depi_v = round(depi(), 4)
-    sgai_v = round(sgai(), 4)
-    lvgi_v = round(lvgi(), 4)
-    tata_v = round(tata(), 4)
-    # Calculate M-score
-    m_score = -4.84 + 0.92*dsri_v + 0.528*gmi_v + 0.404*aqi_v + 0.892*sgi_v + 0.115*depi_v - 0.172*sgai_v + 4.679*tata_v - 0.327*lvgi_v
-    m_score = round(m_score, 4)
-    if m_score < -2.22:
-      interpretation = "Unlikely Manipulation"
-    elif m_score < -1.78:
-      interpretation = "Possible Manipulation"
-    else: interpretation = "Likely Manipulation"
-    return interpretation
+def year(df):
+    return [col for col in df.columns if isinstance(col, int) or (isinstance(col, str) and col.strip().isdigit() and len(col.strip()) == 4)]
+
+# --- Beneish M-Score ---
+def compute_m_score_components(df):
+    data_dict = df.T.to_dict()
+    year_columns = year(df)
+    results = []
+
+    def get(item, year): return data_dict[item][str(year)]
+
+    for i in range(len(year_columns) - 1):
+        y1, y2 = year_columns[i], year_columns[i + 1]
+        try:
+            dsri = (get("bảng cân đối kế toán - các khoản phải thu", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("bảng cân đối kế toán - các khoản phải thu", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
+            gm_t = (get("kết quả kinh doanh - doanh thu thuần", y2) - get("kết quả kinh doanh - giá vốn hàng bán", y2)) / get("kết quả kinh doanh - doanh thu thuần", y2)
+            gm_t1 = (get("kết quả kinh doanh - doanh thu thuần", y1) - get("kết quả kinh doanh - giá vốn hàng bán", y1)) / get("kết quả kinh doanh - doanh thu thuần", y1)
+            gmi = gm_t1 / gm_t
+            aqi = (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y2) + get("bảng cân đối kế toán - tài sản cố định", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y1) + get("bảng cân đối kế toán - tài sản cố định", y1)) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
+            sgi = get("kết quả kinh doanh - doanh thu thuần", y2) / get("kết quả kinh doanh - doanh thu thuần", y1)
+            depi = (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y1) / (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y1) + get("bảng cân đối kế toán - tài sản cố định", y1))) / (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y2) / (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y2) + get("bảng cân đối kế toán - tài sản cố định", y2)))
+            sgai = (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
+            lvgi = (get("bảng cân đối kế toán - nợ phải trả", y2) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (get("bảng cân đối kế toán - nợ phải trả", y1) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
+            tata = (get("kết quả kinh doanh - lãi/(lỗ) thuần sau thuế", y2) - get("lưu chuyển tiền tệ - lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)
+
+            m_score = -4.84 + 0.92*dsri + 0.528*gmi + 0.404*aqi + 0.892*sgi + \
+                       0.115*depi - 0.172*sgai + 4.679*tata - 0.327*lvgi
+
+            results.append({
+                "Period": f"{y1}➞{y2}",
+                "DSRI": round(dsri, 4), "GMI": round(gmi, 4), "AQI": round(aqi, 4),
+                "SGI": round(sgi, 4), "DEPI": round(depi, 4), "SGAI": round(sgai, 4),
+                "LVGI": round(lvgi, 4), "TATA": round(tata, 4), "M-Score": round(m_score, 4)
+            })
+        except Exception:
+            continue
+
+    return results
+
+def compute_benford_all_periods(df):
+    # Filter by IsBold == True
+    bold_df = df[df['IsBold'] == True]
+
+    year_columns = year(df)
+    benford_results = {}
+
+    def leading_digit(v):
+        while v < 1:
+            v *= 10
+        return int(str(v)[0])
+
+    for i in range(len(year_columns) - 1):
+        y1 = str(year_columns[i])
+        y2 = str(year_columns[i + 1])
+        period = f"{y1}➞{y2}"
+
+        values = pd.concat([bold_df[y1], bold_df[y2]]).values.flatten()
+        values = [v for v in values if isinstance(v, (float, int)) and v > 0]
+        leading_digits = [leading_digit(v) for v in values]
+
+        actual_counts = pd.Series(leading_digits).value_counts().sort_index()
+        actual_percentages = actual_counts / actual_counts.sum() * 100
+
+        benford_dist = {d: np.log10(1 + 1/d) * 100 for d in range(1, 10)}
+        benford_df = pd.Series(benford_dist)
+
+        comparison_df = pd.DataFrame({
+            'Benford (%)': benford_df,
+            'Actual (%)': actual_percentages
+        }).fillna(0)
+
+        mad = np.mean(np.abs(comparison_df['Actual (%)'] - comparison_df['Benford (%)']))
+
+        benford_results[period] = {
+            "comparison_df": comparison_df,
+            "mad": round(mad, 4)
+        }
+
+    return bold_df, benford_results
+
 # ĐÂY LÀ PHẦN GIAO DIỆN
+
+def fig_to_base64(fig):
+    buf = BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight")
+    buf.seek(0)
+    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close(fig)
+    return img_base64
+
+def mscore_line_chart(m_score_table):
+    df = pd.DataFrame(m_score_table)
+    fig, ax = plt.subplots(figsize=(6, 3))
+    df.set_index("Period")["M-Score"].plot(ax=ax, marker='o')
+    ax.set_title("M-Score Over Time")
+    ax.set_ylabel("M-Score")
+    ax.set_xlabel("Period")
+    ax.grid(True)
+    return fig_to_base64(fig)
+
+def benford_bar_chart(comparison_df, period):
+    fig, ax = plt.subplots(figsize=(6, 3))
+    comparison_df.plot(kind='bar', ax=ax)
+    ax.set_xlabel("Leading Digit")
+    ax.set_ylabel("Percentage")
+    ax.set_title(f"Benford's Law vs Actual ({period})")
+    ax.grid(True)
+    return fig_to_base64(fig)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -220,13 +277,37 @@ def dashboard():
     if "analysis_result" not in session:
         return redirect(url_for("index"))
     # Convert JSON back to DataFrame
-    table_html = pd.read_json(session["final_data"]).to_html(classes="table table-striped", border=0)
-    extracted_html = pd.read_json(session["extracted_data"]).to_html(classes="table table-striped", border=0)
+    final_data = pd.read_json(session["final_data"])
+    extracted_data = pd.read_json(session["extracted_data"])
+
+    # --- M-Score Chart ---
+    m_score_table = compute_m_score_components(final_data)
+    mscore_chart = mscore_line_chart(m_score_table)
+
+    # --- Benford Chart (for the last period) ---
+    bold_df, benford_results = compute_benford_all_periods(final_data)
+    # Pick the last period for display
+    if benford_results:
+        last_period = list(benford_results.keys())[-1]
+        comparison_df = benford_results[last_period]["comparison_df"]
+        benford_chart = benford_bar_chart(comparison_df, last_period)
+        mad = benford_results[last_period]["mad"]
+    else:
+        benford_chart = None
+        mad = None
+        last_period = None
+
+    table_html = final_data.to_html(classes="table table-striped", border=0)
+    extracted_html = extracted_data.to_html(classes="table table-striped", border=0)
     return render_template(
         "dashboard.html",
         result=session.get("analysis_result"),
         table_html=table_html,
-        extracted_html=extracted_html
+        extracted_html=extracted_html,
+        mscore_chart=mscore_chart,
+        benford_chart=benford_chart,
+        mad=mad,
+        benford_period=last_period
     )
 
 if __name__ == "__main__":
