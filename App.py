@@ -13,6 +13,7 @@ import openpyxl
 from pathlib import Path
 import base64
 from io import BytesIO
+import json
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key" 
@@ -225,53 +226,78 @@ def fig_to_base64(fig):
 def mscore_line_chart(m_score_table):
     df = pd.DataFrame(m_score_table)
     fig, ax = plt.subplots(figsize=(6, 3))
-    df.set_index("Period")["M-Score"].plot(ax=ax, marker='o')
-    ax.set_title("M-Score Over Time")
-    ax.set_ylabel("M-Score")
-    ax.set_xlabel("Period")
-    ax.grid(True)
+    # Use dashboard color for M-Score line
+    df.set_index("Period")["M-Score"].plot(
+        ax=ax, marker='o', color="#1d4ed8", linewidth=2)
+    ax.set_title("M-Score Over Time", color="#1d4ed8")
+    ax.set_ylabel("M-Score", color="#1d4ed8")
+    ax.set_xlabel("Period", color="#1d4ed8")
+    ax.grid(True, color="#fef9c3", alpha=0.5)
+    ax.tick_params(axis='x', colors="#4f5871")
+    ax.tick_params(axis='y', colors="#4f5871")
+    fig.patch.set_facecolor('#fff')
     return fig_to_base64(fig)
 
 def benford_bar_chart(comparison_df, period):
     fig, ax = plt.subplots(figsize=(6, 3))
-    comparison_df.plot(kind='bar', ax=ax)
-    ax.set_xlabel("Leading Digit")
-    ax.set_ylabel("Percentage")
-    ax.set_title(f"Benford's Law vs Actual ({period})")
-    ax.grid(True)
+    # Use dashboard colors for bars
+    comparison_df.plot(
+        kind='bar',
+        ax=ax,
+        color={"Benford (%)": "#ec4899", "Actual (%)": "#be1862"},
+        edgecolor="#fff"
+    )
+    ax.set_xlabel("Leading Digit", color="#1d4ed8")
+    ax.set_ylabel("Percentage", color="#1d4ed8")
+    ax.set_title(f"Benford's Law vs Actual ({period})", color="#ec4899")
+    ax.grid(True, color="#fef9c3", alpha=0.5)
+    ax.tick_params(axis='x', colors="#4f5871")
+    ax.tick_params(axis='y', colors="#4f5871")
+    fig.patch.set_facecolor('#fff')
     return fig_to_base64(fig)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         file = request.files.get("file-upload")
-        print("filr uploased:", file)
         if file:
             try:
-                print("file is not empty")
-                # Đọc file về bộ nhớ tạm
+                # Read file into memory
                 file_bytes = file.read()
                 uploaded_file = io.BytesIO(file_bytes)
-                # Chạy transformer để lấy data tổng hợp
+                # Process the file to get combined data
                 final_data = transformer(uploaded_file)
-                # Reset lại io cho Data_extract vì pandas cần đọc lại file từ đầu
+                # Reset pointer for further reading
                 uploaded_file.seek(0)
                 extracted_data = Data_extract(uploaded_file, "Thuyết minh")
-                # Store only the data as JSON or CSV, not HTML
-                print("final_data index:", list(final_data.index))
+                # Store data as JSON for dashboard use
                 session["final_data"] = final_data.to_json()
                 session["extracted_data"] = extracted_data.to_json()
-                m_score, interpretation = compute_m_score(2021, 2022, final_data)
-                session["m_score"] = m_score
-                session["analysis_result"] = interpretation
-                print("redirecting to dashboard")
+                # Compute M-score and interpretation for dashboard
+                m_score_table = compute_m_score_components(final_data)
+                session["m_score_table"] = m_score_table  # Store the table for chart
+                if m_score_table:
+                    session["m_score"] = m_score_table[-1]["M-Score"]
+                else:
+                    session["m_score"] = None
+                # Compute Benford results and store as JSON-serializable
+                _, benford_results = compute_benford_all_periods(final_data)
+                # Convert DataFrames to dict for JSON serialization
+                benford_results_serializable = {}
+                for period, res in benford_results.items():
+                    benford_results_serializable[period] = {
+                        "comparison_df": res["comparison_df"].to_dict(orient="index"),
+                        "mad": res["mad"]
+                    }
+                session["benford_results"] = benford_results_serializable
+                # Interpretation (optional)
+                session["analysis_result"] = "See dashboard for details"
+                # Redirect to dashboard to display results
                 return redirect(url_for("dashboard"))
-            
             except Exception as e:
                 err_msg = f"Lỗi khi xử lý file: {e}"
                 print("Error:", err_msg)
                 return render_template("upload.html", error=err_msg)
-
     return render_template("upload.html")
 
 @app.route("/dashboard")
@@ -283,24 +309,37 @@ def dashboard():
     extracted_data = pd.read_json(session["extracted_data"])
 
     # --- M-Score Chart ---
-    m_score_table = compute_m_score_components(final_data)
-    mscore_chart = mscore_line_chart(m_score_table)
+    m_score_table = session.get("m_score_table", [])
+    mscore_chart = mscore_line_chart(m_score_table) if m_score_table else None
 
     # --- Benford Chart (for the last period) ---
-    bold_df, benford_results = compute_benford_all_periods(final_data)
-    # Pick the last period for display
+    benford_results = session.get("benford_results", {})
     if benford_results:
         last_period = list(benford_results.keys())[-1]
-        comparison_df = benford_results[last_period]["comparison_df"]
-        benford_chart = benford_bar_chart(comparison_df, last_period)
-        mad = benford_results[last_period]["mad"]
+        comparison_df = pd.DataFrame.from_dict(benford_results[last_period]["comparison_df"], orient="index")
+        mad = benford_results[last_period]["mad"]  # <-- FIX: define mad
+        plotly_benford_data = {
+            "x": list(comparison_df.index),
+            "benford": list(comparison_df["Benford (%)"]),
+            "actual": list(comparison_df["Actual (%)"])
+        }
     else:
-        benford_chart = None
+        print ("No Benford results found.")
+        plotly_benford_data = {}
         mad = None
-        last_period = None
 
+    # --- M-Score Chart Data for Plotly ---
+    mscore_plotly_data = {}
+    if m_score_table:
+        periods = [row["Period"] for row in m_score_table]
+        m_scores = [row["M-Score"] for row in m_score_table]
+        mscore_plotly_data = {
+            "x": periods,
+            "y": m_scores
+        }
     table_html = final_data.to_html(classes="table table-striped", border=0)
     extracted_html = extracted_data.to_html(classes="table table-striped", border=0)
+    plotly_benford_data = plotly_benford_data or {}
     return render_template(
         "dashboard.html",
         result=session.get("analysis_result"),
@@ -308,9 +347,10 @@ def dashboard():
         table_html=table_html,
         extracted_html=extracted_html,
         mscore_chart=mscore_chart,
-        benford_chart=benford_chart,
         mad=mad,
-        benford_period=last_period
+        plotly_benford_data=json.dumps(plotly_benford_data),
+        mscore_plotly_data=json.dumps(mscore_plotly_data),
+        # ...other context...
     )
 
 if __name__ == "__main__":
