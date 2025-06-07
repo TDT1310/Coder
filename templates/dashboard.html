@@ -5,17 +5,29 @@
 <!--Icon-->
 <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/3.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
 <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/3.0.0/uicons-thin-rounded/css/uicons-thin-rounded.css'>
+<link rel='stylesheet' href='https://cdn-uicons.flaticon.com/3.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>FraudDetect Pro Dashboard</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+  :root {
+    --color-primary: #1e40af;
+    --color-primary-light: #3b82f6;
+    --color-primary-dark: #1b399c;
+    --color-text-main: #4f5871;
+    --color-text-muted: #6c6c6c;
+    --color-text-light: #9e9e9e;
+    --color-bg: #f1f6fb;
+    --border-radius: 6px;
+    --border-radius-lg: 12px;
+    --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
   * { box-sizing: border-box; }
   body {
-    margin:0; 
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background: #f9fafb;
-    color: #1f2937;
+    margin:0;
+    font-family: var(--font-family);
+    background: var(--color-bg);
+    color: var(--color-text-main);
     font-size: 14px;
     line-height: 1.5;
   }
@@ -31,21 +43,25 @@
     padding: 20px 16px 60px;
   }
   header {
+    background: #fff;
+    padding: 10px 20px;
+    font-size: 14px;
+    border-bottom: 1px solid #ddd;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #e5e7eb;
-    background: none;
-    border-radius: 0;
-    box-shadow: none;
+    justify-content: space-between;
+    color: #1e40af;
+    border-radius: 0;      /* Remove any rounding */
+    box-shadow: none;      /* Remove any shadow */
+    margin-bottom: 0;      /* Remove extra spacing */
   }
   .logo {
     display: flex;
     align-items: center;
+    gap: 8px;
     font-weight: 700;
-    font-size: 1.25rem;
-    color: #1f2937;
+    font-size: 16px;
+    color: #1e40af;
   }
   .logo svg {
     width: 20px;
@@ -149,7 +165,7 @@
     justify-content: space-between;
     background: white;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
+    box-shadow: 5px px 30px rgb(0 0 0 / 0.05);
     margin-bottom: 0;
   }
   .left-column, .right-column {
@@ -174,17 +190,11 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .mscore-current { font-size: 2rem; font-weight: 700; color: #78350f; margin: 0 0 8px 0; }
-  .warning-label {
-    display: inline-block;
-    background: #fef3c7;
-    color: #92400e;
-    font-weight: 700;
-    font-size: 0.875rem;
-    padding: 2px 8px;
-    border-radius: 16px;
-    vertical-align: middle;
-    margin-left: 12px;
+  .current-value {
+    font-size: 0.75rem;
+    color: #1d4ed8;
+    font-weight: 500;
+    margin-bottom: 8px;
   }
   .threshold-volatility {
     font-size: 0.875rem;
@@ -242,68 +252,58 @@
 <body>
 <header>
   <div class="logo" aria-label="FraudDetect Pro Logo">
-    <svg aria-hidden="true" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" style="color:#2563eb;">
-      <path d="M12 2L3 7v6c0 5 4 9 9 9s9-4 9-9V7l-9-5z"></path>
-      <path d="M12 22v-9"></path>
-    </svg>
+    <i class="fi fi-rr-spy" style="font-size: 20px; color: #1e40af;"></i>
     FraudDetect Pro
   </div>
   <div class="header-right">
     <button class="download-pdf" aria-label="Download PDF">Download PDF</button>
-    <button class="download-excel" aria-label="Download Excel">Download Excel</button>
-    <div class="user-profile" aria-label="User Profile"></div>
   </div>
 </header>
 
 <main class="container">
   <section class="main-title" aria-labelledby="dashboard-title">
     <div class="main-title-left">
-      <h1 id="dashboard-title">Financial Report Fraud Analysis</h1>
+      <div class="label", style="font-weight: 700; color: #1e40af; font-size: 1rem;">Financial Report Fraud Analysis</div>
       <div class="report-details" role="list">
-        <span role="listitem"><strong>Report Year:</strong> 2023</span>
-        <span role="listitem"><strong>Type:</strong> Annual</span>
-        <span role="listitem"><strong>Data Scope:</strong> Full Statements</span>
+        <span role="listitem">📅 Report Year: <strong>2023</strong></span>
+        <span role="listitem">📄 Type: <strong> Annual</strong></span>
+        <span role="listitem">📊 Data Scope: <strong> Full Statements</strong></span>
       </div>
-    </div>
-    <div class="submitter-info">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="#6b7280" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-      Submitted by Alex Johnson
     </div>
   </section>
 
   <!-- Cards -->
   <section class="cards-row" aria-label="Summary Cards">
     <article class="card" role="region" aria-labelledby="overall-fraud-status-title"
-      style="background:white; color:#92400e;">
+      style="background:white; color:black;">
       <div class="card-header" style="flex-direction:column; gap:2px;">
-        <i class="fi fi-rr-analytics-magnifying-glass" style="font-size: 30px;"></i>
+        <i class="fi fi-rr-analytics-magnifying-glass" style="font-size: 30px; color: #eab308;"></i>
         <div class="label" id="overall-fraud-status-title">Overall Fraud Status</div>
-        <div class="value" style="font-weight:700; font-size:1.5rem; margin-bottom:4px">Review Needed</div>
+        <div class="value" style="font-weight:700; font-size:1.35rem; margin-bottom:4px; color: #a16207;">Review Needed</div>
       </div>
     </article>
 
     <article class="card" role="region" aria-labelledby="mscore-title"
-      style="background:white; color:#78350f;">
+      style="background:white; color:black;">
       <div class="card-header" style="flex-direction:column; gap:2px;">
-        <i class="fi fi-rr-chart-histogram" style="font-size: 30px;"></i>
+        <i class="fi fi-rr-chart-histogram" style="font-size: 30px; color: #3b82f6;"></i>
         <div class="label" id="mscore-title">M-Score (Beneish)</div>
-        <div class="value" style="font-size:1.5rem; font-weight:700; margin-bottom:4px">
-          {{ m_score if m_score is not none else "N/A" }}
+        <div class="value" style="font-size:1.35rem; font-weight:700; margin-bottom:2px; color: #1d4ed8;">{{ m_score if m_score is not none else "N/A" }}</div>
+        <div class="benchmark" style="font-size:0.75rem; color:#6b7280; margin-bottom:6px;">Threshold: <span style="font-size:0.875rem; color:#3b82f6; margin-bottom:6px; font-weight: 500;">-2.22 </span> </div>
+        <div class="warning" style="font-size:0.65rem; color:#1d4ed8; font-weight:600; background: #dbeafe; border-radius: 16px; padding: 3px 5px; max-width: fit-content ;margin: auto;"> Close to warning threshold</div>   
         </div>
       </div>
-      <div class="benchmark" style="font-size:0.875rem; color:#6b7280; margin-bottom:6px;">Threshold: -2.22</div>
-      <div class="warning" style="display: inline-block; font-size:0.75rem; color:#b45309; font-weight:600; background: #92400e; border-radius: 16px; padding: 2px 8px"> Close to warning threshold</div>
     </article>
 
     <article class="card" role="region" aria-labelledby="benford-title"
-      style="background: white; color:#991b1b;">
+      style="background: white; color:black;">
       <div class="card-header" style="flex-direction:column; gap:2px;">
-        <i class="fi fi-rr-curve-arrow" style="font-size: 30px;"></i>
+        <i class="fi fi-rr-curve-arrow" style="font-size: 30px; color: #ec4899;"></i>
         <div class="label" id="benford-title">Benford Deviation</div>
-        <div class="value" style="font-weight:700; font-size:1.5rem; margin-bottom:4px;">Medium</div>
+        <div class="value" style="font-weight:700; font-size:1.35rem; margin-bottom:2px; color: #be1862">Medium</div>
+        <div class="benchmark" style="font-size:0.75rem; color:#6b7280; margin-bottom:6px;">MAD: <span style="font-size:0.875rem; color:#ec4899; margin-bottom:6px; font-weight: 500;"> 0.013 </span></div>
+        <div class="warning" style="font-size:0.65rem; color: #1d4ed8; font-weight:600; background: #dbeafe; border-radius: 16px; padding: 3px 5px; max-width: fit-content; margin: auto;">Notable deviation</div>
       </div>
-      <div class="benchmark" style="font-size:0.875rem; color:#991b1b; margin-bottom:6px;">MAD: 0.013</div>
-      <div class="warning" style="font-size:0.75rem; color:#991b1b; font-weight:600;">Notable deviation</div>
     </article>
   </section>
 
@@ -311,12 +311,15 @@
   <section class="bottom-row" aria-label="Detailed Analysis Section">
     <!-- Left Column -->
     <div class="left-column">
-      <section class="mscore-analysis" role="region" aria-labelledby="mscore-analysis-title">
-        <div class="expand-link" tabindex="0" role="button" aria-label="Expand M-Score Analysis">Expand</div>
-        <h3 id="mscore-analysis-title" style="margin-top:0; font-weight:700; margin-bottom:8px;">M-Score Analysis</h3>
-        <div>
-          <span class="mscore-current">-2.11</span>
-          <span class="warning-label">Warning</span>
+      <section class="mscore-analysis" role="region" aria-labelledby="mscore-analysis-title" style="position:relative;">
+        <div class="warning-label"
+             style="position:absolute; top:16px; right:20px; display:inline-block; background:#fef3c7; color:#92400e; font-weight:700; font-size:0.875rem; padding:2px 8px; border-radius:16px; z-index:1;">
+          Warning
+        </div>
+        <h3 id="mscore-analysis-title" style="margin-top:0; font-weight:700; margin-bottom:1px; font-size: 1.5rem;">M-Score Analysis</h3>
+        <div class="current-value">
+          <span style="color: var(--color-text-main);"> Current Value: </span>
+          <span>-2.11</span>
         </div>
         <div class="threshold-volatility">
           <span>Threshold: -2.22</span>
@@ -335,14 +338,30 @@
         </div>
         <div class="yoy-value">Year-over-year: +0.08</div>
         <div class="small-line-graph" aria-label="Small line graph showing rising trend"></div>
+        {% if mscore_chart %}
+        <div style="margin-top:16px;">
+          <h4 style="margin-bottom:4px;">M-Score Over Time</h4>
+          <img src="data:image/png;base64,{{ mscore_chart }}" alt="M-Score Line Chart" style="max-width:100%;"/>
+        </div>
+        {% endif %}
       </section>
     </div>
 
     <!-- Right Column -->
     <div class="right-column">
-      <section class="benford-analysis" role="region" aria-labelledby="benford-analysis-title">
-        <h3 id="benford-analysis-title" class="benford-title">Benford Analysis</h3>
-        <div><strong>MAD Deviation:</strong> 0.013, Deviation Level: Medium</div>
+      <section class="benford-analysis" role="region" aria-labelledby="benford-analysis-title" style="position:relative;">
+        <div class="warning-label"
+             style="position:absolute; top:16px; right:20px; display:inline-block; background:#fef3c7; color:#ec4899; font-weight:700; font-size:0.875rem; padding:2px 8px; border-radius:16px; z-index:1;">
+          Medium
+        </div>
+        <h3 id="benford-analysis-title" style="margin-top:0; font-weight:700; margin-bottom:1px; font-size: 1.5rem;">Benford Analysis</h3>
+        <div class="current-value">
+          <span style="color: var(--color-text-main);">MAD Deviation:</span>
+          <span style="color:#ec4899; font-weight:700;">0.013</span>
+        </div>
+        <div class="threshold-volatility">
+          <span>Deviation Level: <span style="color:#ec4899; font-weight:600;">Medium</span></span>
+        </div>
         <div class="benford-charts" aria-hidden="true">
           <div class="benford-chart" aria-label="Benford Bar Chart"></div>
           <div class="benford-chart" aria-label="Benford Line Chart"></div>
@@ -351,6 +370,13 @@
           <span><span class="benford-legend-color benford-actual"></span>Actual</span>
           <span><span class="benford-legend-color benford-expected"></span>Expected</span>
         </div>
+        {% if benford_chart %}
+        <div style="margin-top:16px;">
+          <h4 style="margin-bottom:4px;">Benford's Law Analysis {% if benford_period %} ({{ benford_period }}) {% endif %}</h4>
+          <img src="data:image/png;base64,{{ benford_chart }}" alt="Benford Bar Chart" style="max-width:100%;"/>
+          <p style="margin:0;"><strong>MAD:</strong> {{ mad }}</p>
+        </div>
+        {% endif %}
       </section>
     </div>
   </section>
@@ -373,5 +399,46 @@
 <footer>
   © 2024 FraudDetect Pro — Financial Report Fraud Detection Platform. All rights reserved.
 </footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+document.querySelector('.download-pdf').addEventListener('click', function () {
+  // Select the main content you want to export
+  const content = document.body;
+  html2canvas(content).then(canvas => {
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new window.jspdf.jsPDF({
+      orientation: 'portrait',
+      unit: 'pt',
+      format: 'a4'
+    });
+    // Calculate width/height for A4
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+    pdf.save('dashboard.pdf');
+  });
+});
+
+// Add this block for dynamic warning label color:
+document.querySelectorAll('.warning-label').forEach(function(label) {
+  const level = label.textContent.trim().toLowerCase();
+  if (level === 'warning' || level === 'high') {
+    label.style.background = '#fef3c7';
+    label.style.color = '#92400e';
+  } else if (level === 'medium') {
+    label.style.background = '#fdf2f8';
+    label.style.color = '#ec4899';
+  } else if (level === 'low') {
+    label.style.background = '#ecfdf5';
+    label.style.color = '#059669';
+  } else {
+    label.style.background = '#e5e7eb';
+    label.style.color = '#374151';
+  }
+});
+</script>
 </body>
 </html>

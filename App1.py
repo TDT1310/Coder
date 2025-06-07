@@ -4,15 +4,12 @@ from flask import Flask, request, render_template, redirect, url_for, session
 from flask_session import Session
 import pandas as pd
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')  # Use non-GUI backend for server
 import matplotlib.pyplot as plt
 import re
 import io
 import openpyxl
 from pathlib import Path
-import base64
-from io import BytesIO
+import streamlit as st
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key" 
@@ -129,9 +126,9 @@ def transformer (uploaded_file):
     #Kết hợp và ghi vào file excel mới
     final_data = pd.concat(combined_data, ignore_index=False)
     final_data.index = final_data.index.str.lower()
+    final_data.to_excel("final_data.xlsx", index=True)
     return final_data
 
-# Function to calculate all M-score inputs and result
 def year(df):
     return [col for col in df.columns if isinstance(col, int) or (isinstance(col, str) and col.strip().isdigit() and len(col.strip()) == 4)]
 
@@ -171,6 +168,7 @@ def compute_m_score_components(df):
 
     return results
 
+# --- Benford Analysis ---
 def compute_benford_all_periods(df):
     # Filter by IsBold == True
     bold_df = df[df['IsBold'] == True]
@@ -212,106 +210,184 @@ def compute_benford_all_periods(df):
 
     return bold_df, benford_results
 
+
+st.title ("Ứng dụng phát hiện gian lận báo cáo tài chính")
+st.markdown ("""Vui lòng tải lên báo cáo tài chính dưới định dạng CSV hoặc Excel để phân tích.""")
+
+# Upload tài liệu và phân tích
+
+uploaded_file = st.file_uploader("Tải lên báo cáo tài chính",type=["xlsx", "csv"])
+if uploaded_file is not None:
+    final_data = transformer(uploaded_file)
+    st.write(final_data)
+    bold_df, benford_results = compute_benford_all_periods(final_data)
+    st.write(bold_df)
+
+    st.subheader("M-Score Chi tiết theo từng giai đoạn")
+    m_score_table = compute_m_score_components(final_data)
+    m_score_df = pd.DataFrame(m_score_table)
+    st.line_chart(m_score_df.set_index("Period")[["M-Score"]])
+
+    # Detect year columns
+    year_options = year(final_data)
+    year_pairs = [(year_options[i], year_options[i+1]) for i in range(len(year_options)-1)]
+
+    # Let user choose a year pair
+    selected_pair = st.selectbox("Chọn giai đoạn phân tích:", year_pairs, format_func=lambda x: f"{x[0]} ➞ {x[1]}")
+    y1, y2 = selected_pair
+
+    # Collapsed sections for both analyses
+    with st.expander("Kết quả Beneish M-Score"):
+        selected_period = f"{y1}➞{y2}"
+        row_index = m_score_df.index[m_score_df["Period"] == selected_period].tolist()
+
+        idx = row_index[0]
+        current = m_score_df.loc[idx]
+        previous = m_score_df.loc[idx - 1] if idx > 0 else None
+
+        # Compute and sort deltas
+        variables = ["DSRI", "GMI", "AQI", "SGI", "DEPI", "SGAI", "LVGI", "TATA"]
+        deltas = []
+
+        if idx > 0:
+            previous = m_score_df.loc[idx - 1]
+
+            # Bar chart: compare actual values for 8 variables in T-1 vs T
+            st.markdown("### 📊 So sánh giá trị các biến Beneish giữa hai kỳ")
+
+            var_values = {
+                'Variable': variables,
+                'T-1': [previous[var] for var in variables],
+                'T': [current[var] for var in variables]
+            }
+            var_df = pd.DataFrame(var_values)
+
+            fig, ax = plt.subplots(figsize=(10, 4))
+            width = 0.35
+            x = np.arange(len(variables))
+
+            ax.bar(x - width/2, var_df['T-1'], width, label=f"{y1}")
+            ax.bar(x + width/2, var_df['T'], width, label=f"{y2}")
+            ax.set_xticks(x)
+            ax.set_xticklabels(var_df['Variable'], rotation=45)
+            ax.set_ylabel("Giá trị biến")
+            ax.set_title(f"So sánh biến Beneish: {selected_period}")
+            ax.legend()
+            st.pyplot(fig)
+
+
+
+        for var in variables:
+            if previous is not None:
+                delta = current[var] - previous[var]
+                deltas.append((var, current[var], delta))
+            else:
+                deltas.append((var, current[var], None))
+
+        # Sort by absolute delta and keep top 3
+        top_changes = sorted(deltas, key=lambda x: abs(x[2]) if x[2] is not None else 0, reverse=True)[:3]
+
+        # Build formatted output
+        def format_var(name, value, delta):
+            if delta is None:
+                return f"{name}: {value:.4f}"
+            color = "green" if delta > 0 else "red" if delta < 0 else "gray"
+            sign = "+" if delta > 0 else ""
+            return f'{name}: {value:.4f} <span style="color:{color}; font-size: 0.9em">({sign}{delta:.4f})</span>'
+
+        # Format Markdown
+        html_output = f"""
+        <h4>M-score Analysis ({selected_period})</h4>
+        <ul>
+        {''.join(f"<li>{format_var(var, val, delta)}</li>" for var, val, delta in top_changes)}
+        </ul>
+        <h4><b>M-Score</b>: <code>{current['M-Score']:.4f}</code></h4>
+        """
+
+        st.markdown(html_output, unsafe_allow_html=True)
+
+        score = current['M-Score']
+        if score < -2.22:
+            st.success("Unlikely Manipulation")
+        elif score < -1.78:
+            st.warning("Possible Manipulation")
+        else:
+            st.error("Likely Manipulation")
+
+    with st.expander("Phân tích Benford's Law"):
+        period_key = f"{y1}➞{y2}"
+        bdata = benford_results[period_key]
+        comparison_df = bdata["comparison_df"]
+        mad = bdata["mad"]
+
+        st.subheader(f"Benford Analysis ({period_key})")
+        st.markdown("Comparison Table")
+        st.dataframe(comparison_df.style.format("{:.2f}"))
+        st.markdown("Bar Chart")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        comparison_df.plot(kind='bar', ax=ax)
+        ax.set_xlabel("Leading Digit")
+        ax.set_ylabel("Percentage")
+        ax.set_title(f"Benford's Law vs Actual ({period_key})")
+        ax.grid(True)
+        st.pyplot(fig)
+        st.markdown("MAD (Mean Absolute Deviation) Test")
+        st.markdown(f"**MAD:** `{mad:.4f}`")
+
+        # Interpretation
+        if mad <= 0.006:
+            st.success("✅ Close conformity with Benford's Law")
+        elif mad <= 0.012:
+            st.info("🟡 Acceptable conformity")
+        else:
+            st.error("❌ Nonconformity — possible anomaly")
+
 # ĐÂY LÀ PHẦN GIAO DIỆN
 
-def fig_to_base64(fig):
-    buf = BytesIO()
-    fig.savefig(buf, format="png", bbox_inches="tight")
-    buf.seek(0)
-    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
-    plt.close(fig)
-    return img_base64
+#@app.route("/", methods=["GET", "POST"])
+#def index():
+#    if request.method == "POST":
+#        file = request.files.get("file-upload")
+#        print("file uploased:", file)
+#        if file:
+#            try:
+#                print("file is not empty")
+#                # Đọc file về bộ nhớ tạm
+#                file_bytes = file.read()
+#                uploaded_file = io.BytesIO(file_bytes)
+#                # Chạy transformer để lấy data tổng hợp
+#                final_data = transformer(uploaded_file)
+#                # Reset lại io cho Data_extract vì pandas cần đọc lại file từ đầu
+#                uploaded_file.seek(0)
+#                extracted_data = Data_extract(uploaded_file, "Thuyết minh")
+#                # Store only the data as JSON or CSV, not HTML
+#                print("final_data index:", list(final_data.index))
+#                session["final_data"] = final_data.to_json()
+#                session["extracted_data"] = extracted_data.to_json()
+#                session["analysis_result"] = compute_m_score_components(final_data)
+#                print("redirecting to dashboard")
+#                return redirect(url_for("dashboard"))
+#            
+#            except Exception as e:
+#                err_msg = f"Lỗi khi xử lý file: {e}"
+#                print("Error:", err_msg)
+#                return render_template("upload.html", error=err_msg)
+#
+#    return render_template("upload.html")
 
-def mscore_line_chart(m_score_table):
-    df = pd.DataFrame(m_score_table)
-    fig, ax = plt.subplots(figsize=(6, 3))
-    df.set_index("Period")["M-Score"].plot(ax=ax, marker='o')
-    ax.set_title("M-Score Over Time")
-    ax.set_ylabel("M-Score")
-    ax.set_xlabel("Period")
-    ax.grid(True)
-    return fig_to_base64(fig)
+#@app.route("/dashboard")
+#def dashboard():
+#    if "analysis_result" not in session:
+#        return redirect(url_for("index"))
+#    # Convert JSON back to DataFrame
+#    table_html = pd.read_json(session["final_data"]).to_html(classes="table table-striped", border=0)
+#    extracted_html = pd.read_json(session["extracted_data"]).to_html(classes="table table-striped", border=0)
+#    return render_template(
+#       "dashboard.html",
+#        result=session.get("analysis_result"),
+#        table_html=table_html,
+#        extracted_html=extracted_html
+#    )
 
-def benford_bar_chart(comparison_df, period):
-    fig, ax = plt.subplots(figsize=(6, 3))
-    comparison_df.plot(kind='bar', ax=ax)
-    ax.set_xlabel("Leading Digit")
-    ax.set_ylabel("Percentage")
-    ax.set_title(f"Benford's Law vs Actual ({period})")
-    ax.grid(True)
-    return fig_to_base64(fig)
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if request.method == "POST":
-        file = request.files.get("file-upload")
-        print("filr uploased:", file)
-        if file:
-            try:
-                print("file is not empty")
-                # Đọc file về bộ nhớ tạm
-                file_bytes = file.read()
-                uploaded_file = io.BytesIO(file_bytes)
-                # Chạy transformer để lấy data tổng hợp
-                final_data = transformer(uploaded_file)
-                # Reset lại io cho Data_extract vì pandas cần đọc lại file từ đầu
-                uploaded_file.seek(0)
-                extracted_data = Data_extract(uploaded_file, "Thuyết minh")
-                # Store only the data as JSON or CSV, not HTML
-                print("final_data index:", list(final_data.index))
-                session["final_data"] = final_data.to_json()
-                session["extracted_data"] = extracted_data.to_json()
-                m_score, interpretation = compute_m_score(2021, 2022, final_data)
-                session["m_score"] = m_score
-                session["analysis_result"] = interpretation
-                print("redirecting to dashboard")
-                return redirect(url_for("dashboard"))
-            
-            except Exception as e:
-                err_msg = f"Lỗi khi xử lý file: {e}"
-                print("Error:", err_msg)
-                return render_template("upload.html", error=err_msg)
-
-    return render_template("upload.html")
-
-@app.route("/dashboard")
-def dashboard():
-    if "analysis_result" not in session:
-        return redirect(url_for("index"))
-    # Convert JSON back to DataFrame
-    final_data = pd.read_json(session["final_data"])
-    extracted_data = pd.read_json(session["extracted_data"])
-
-    # --- M-Score Chart ---
-    m_score_table = compute_m_score_components(final_data)
-    mscore_chart = mscore_line_chart(m_score_table)
-
-    # --- Benford Chart (for the last period) ---
-    bold_df, benford_results = compute_benford_all_periods(final_data)
-    # Pick the last period for display
-    if benford_results:
-        last_period = list(benford_results.keys())[-1]
-        comparison_df = benford_results[last_period]["comparison_df"]
-        benford_chart = benford_bar_chart(comparison_df, last_period)
-        mad = benford_results[last_period]["mad"]
-    else:
-        benford_chart = None
-        mad = None
-        last_period = None
-
-    table_html = final_data.to_html(classes="table table-striped", border=0)
-    extracted_html = extracted_data.to_html(classes="table table-striped", border=0)
-    return render_template(
-        "dashboard.html",
-        result=session.get("analysis_result"),
-        m_score=session.get("m_score"),
-        table_html=table_html,
-        extracted_html=extracted_html,
-        mscore_chart=mscore_chart,
-        benford_chart=benford_chart,
-        mad=mad,
-        benford_period=last_period
-    )
-
-if __name__ == "__main__":
-    app.run(debug=True)
+#if __name__ == "__main__":
+#    app.run(debug=True)
