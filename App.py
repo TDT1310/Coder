@@ -125,7 +125,6 @@ def transformer (uploaded_file):
     #Kết hợp và ghi vào file excel mới
     final_data = pd.concat(combined_data, ignore_index=False)
     final_data.index = final_data.index.str.lower()
-    final_data.to_excel("final_data.xlsx", index=True)
     return final_data
 
 # Function to calculate all M-score inputs and result
@@ -181,7 +180,7 @@ def compute_m_score(y1, y2, uploaded_file):
     elif m_score < -1.78:
       interpretation = "Possible Manipulation"
     else: interpretation = "Likely Manipulation"
-    return interpretation
+    return m_score, interpretation
 # ĐÂY LÀ PHẦN GIAO DIỆN
 
 @app.route("/", methods=["GET", "POST"])
@@ -204,7 +203,9 @@ def index():
                 print("final_data index:", list(final_data.index))
                 session["final_data"] = final_data.to_json()
                 session["extracted_data"] = extracted_data.to_json()
-                session["analysis_result"] = compute_m_score(2021, 2022, final_data)
+                m_score, interpretation = compute_m_score(2021, 2022, final_data)
+                session["m_score"] = m_score
+                session["analysis_result"] = interpretation
                 print("redirecting to dashboard")
                 return redirect(url_for("dashboard"))
             
@@ -219,12 +220,12 @@ def index():
 def dashboard():
     if "analysis_result" not in session:
         return redirect(url_for("index"))
-    # Convert JSON back to DataFrame
     table_html = pd.read_json(session["final_data"]).to_html(classes="table table-striped", border=0)
     extracted_html = pd.read_json(session["extracted_data"]).to_html(classes="table table-striped", border=0)
     return render_template(
         "dashboard.html",
         result=session.get("analysis_result"),
+        m_score=session.get("m_score"),
         table_html=table_html,
         extracted_html=extracted_html
     )

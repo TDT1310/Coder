@@ -287,7 +287,9 @@
       <div class="card-header" style="flex-direction:column; gap:2px;">
         <i class="fi fi-rr-chart-histogram" style="font-size: 30px;"></i>
         <div class="label" id="mscore-title">M-Score (Beneish)</div>
-        <div class="value" style="font-size:1.5rem; font-weight:700; margin-bottom:4px">-2.11</div>
+        <div class="value" style="font-size:1.5rem; font-weight:700; margin-bottom:4px">
+          {{ m_score if m_score is not none else "N/A" }}
+        </div>
       </div>
       <div class="benchmark" style="font-size:0.875rem; color:#6b7280; margin-bottom:6px;">Threshold: -2.22</div>
       <div class="warning" style="display: inline-block; font-size:0.75rem; color:#b45309; font-weight:600; background: #92400e; border-radius: 16px; padding: 2px 8px"> Close to warning threshold</div>
