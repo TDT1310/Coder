@@ -618,7 +618,44 @@
     {% endif %}
   </section>
 
-  <!-- Recommendations & Next Steps (moved outside .bottom-row for full width) -->
+  <!-- Question & Answer Block (styled like other sections, above Recommendations) -->
+  <section class="qa-block" style="background:white; border-radius:8px; margin:24px 0 0 0; padding:24px 24px 18px 24px; box-shadow:0 2px 8px rgb(0 0 0 / 0.05);">
+    <h3 style="font-weight:700; font-size:1.25rem; color:#1d4ed8; margin-bottom:12px;">Ask a Question</h3>
+    <form id="qa-form" style="display:flex; gap:12px; align-items:center; margin-bottom:0;">
+        <input type="text" id="user_question" name="user_question" placeholder="Ask a question..." required
+               style="flex:1; padding:10px 14px; border:1px solid #d1d5db; border-radius:8px; font-size:1rem; font-family:inherit;">
+        <button type="submit" class="btn-blue" style="padding:6px 14px; font-size:0.95rem; min-width:60px; flex:0 0 auto;">Ask</button>
+    </form>
+    <div id="qa-answer-block" style="margin-top:1.2em;">
+      {% if latest_qa.question %}
+        <div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">
+          <b style="color:#1e40af;">Question:</b> {{ latest_qa.question }}<br>
+          <b style="color:#1e40af;">Answer:</b> {{ latest_qa.answer|safe }}
+        </div>
+      {% endif %}
+    </div>
+  </section>
+  <script>
+  document.getElementById('qa-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const question = document.getElementById('user_question').value;
+      fetch('/ask', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: 'user_question=' + encodeURIComponent(question)
+      })
+      .then(response => response.text())
+      .then(answerHtml => {
+          document.getElementById('qa-answer-block').innerHTML =
+              '<div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">' +
+              '<b style="color:#1e40af;">Q:</b> ' + question + '<br>' +
+              '<b style="color:#1e40af;">A:</b> ' + answerHtml +
+              '</div>';
+      });
+  });
+  </script>
+
+  <!-- Recommendations & Next Steps (now below Q&A block) -->
   <section class="recommendations" role="region" aria-labelledby="recommendations-title">
     <h3 id="recommendations-title">Recommendations &amp; Next Steps</h3>
     <ul>
@@ -631,6 +668,7 @@
       <button class="btn-white" aria-label="Reference Materials">Reference Materials</button>
     </div>
   </section> 
+  
 </main>
 
 <footer>

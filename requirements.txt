@@ -11,3 +11,4 @@ unstructured
 langchain-openai
 faiss-cpu
 langchain-google-genai
+markdown

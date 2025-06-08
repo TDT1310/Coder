@@ -1,8 +1,8 @@
-
 # ĐÂY LÀ PHẦN KHAI BÁO THƯ VIỆN
 from account_mapping_utils import setup_account_mapping, robust_get
 from flask import Flask, request, render_template, redirect, url_for, session
 from flask_session import Session
+from App1 import prepare_excel, rag 
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -15,6 +15,8 @@ from pathlib import Path
 import base64
 from io import BytesIO
 import json
+import tempfile
+import markdown
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key" 
@@ -305,12 +307,16 @@ def index():
                 uploaded_file = io.BytesIO(file_bytes)
                 # Process the file to get combined data
                 final_data = transformer(uploaded_file)
+
                 # Reset pointer for further reading
                 uploaded_file.seek(0)
-                extracted_data = Data_extract(uploaded_file, "Thuyết minh")
+                # Save to a temp file for prepare_excel
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                    tmp.write(file_bytes)
+                    tmp_path = tmp.name
+                session["excel_file_path"] = tmp_path  
                 # Store data as JSON for dashboard use
                 session["final_data"] = final_data.to_json()
-                session["extracted_data"] = extracted_data.to_json()
                 # Compute M-score and interpretation for dashboard
                 m_score_table = compute_m_score_components(final_data)
                 session["m_score_table"] = m_score_table  # Store the table for chart
@@ -339,14 +345,22 @@ def index():
                 return render_template("upload.html", error=err_msg)
     return render_template("upload.html")
 
-@app.route("/dashboard")
+@app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
     if "analysis_result" not in session:
         return redirect(url_for("index"))
     final_data = pd.read_json(session["final_data"])
-    extracted_data = pd.read_json(session["extracted_data"])
     m_score_table = session.get("m_score_table", [])
-    benford_results = session.get("benford_results", {})
+    benford_results = session.get("benford_results", {}) 
+    excel_file_path = session.get("excel_file_path")
+
+    # Write final_data to a temp Excel file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+        final_data.to_excel(tmp.name, index=False)
+        excel_file_path = tmp.name
+    excel_df = None
+    if excel_file_path:
+        excel_df = prepare_excel(excel_file_path)
 
     # Prepare periods for dashboard
     year_columns = year(final_data)
@@ -355,8 +369,8 @@ def dashboard():
         y1, y2 = year_columns[i], year_columns[i + 1]
         periods.append(f"{y1}-{y2}")
 
-    # Get selected period from GET param, default to most recent
-    selected_period = request.args.get("selected_period")
+    # Get selected period from GET/POST param, default to most recent
+    selected_period = request.values.get("selected_period")
     if not selected_period or selected_period not in periods:
         selected_period = periods[-1] if periods else None
 
@@ -414,16 +428,15 @@ def dashboard():
             "previous": [previous[var] for var in variables] if previous else [None]*len(variables),
             "previous_label": selected_period_label.split("➞")[0] if selected_period_label and "➞" in selected_period_label else "T-1"
         }
-
-    table_html = final_data.to_html(classes="table table-striped", border=0)
-    extracted_html = extracted_data.to_html(classes="table table-striped", border=0)
+    # --- Q&A Block ---
+    qa_history = session.get("qa_history", [])
+    latest_answer = session.get("latest_answer", "")
+    latest_qa = session.get("latest_qa", {})
 
     return render_template(
         "dashboard.html",
         result=session.get("analysis_result"),
         m_score=m_score_value,
-        table_html=table_html,
-        extracted_html=extracted_html,
         mad=mad,
         plotly_benford_data=json.dumps(plotly_benford_data),
         mscore_plotly_data=json.dumps(mscore_plotly_data),
@@ -431,8 +444,22 @@ def dashboard():
         selected_period=selected_period,
         mscore_components_bar_data=json.dumps(mscore_components_bar_data),
         top_changes=top_changes,
+        qa_history=qa_history,
+        latest_answer=latest_answer,
+        latest_qa=latest_qa,  # <-- Add this line
         # ...other context...
     )
+
+@app.route("/ask", methods=["POST"])
+def ask():
+    question = request.form.get("user_question")
+    excel_file_path = session.get("excel_file_path")
+    excel_df = prepare_excel(excel_file_path) if excel_file_path else None
+    answer = rag(excel_df, question) if excel_df else "Knowledge base not available."
+    answer_html = markdown.markdown(answer, extensions=["fenced_code", "tables", "nl2br"])
+    # Save latest Q&A to session
+    session["latest_qa"] = {"question": question, "answer": answer_html}
+    return answer_html  # Return only the answer HTML
 
 if __name__ == "__main__":
     app.run(debug=True)

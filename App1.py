@@ -2,14 +2,7 @@ from langchain.document_loaders import UnstructuredExcelLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain.vectorstores.faiss import FAISS
-from IPython.display import display, Markdown
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-
-loader = UnstructuredExcelLoader(r"D:\Học hành\Coder\final_data.xlsx")
-data = loader.load()
-
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=10000, chunk_overlap=1000)
-chunks = text_splitter.split_documents(data)
 
 # Build a function for Excel data
 def prepare_excel(file_path):
@@ -50,8 +43,5 @@ def rag(db_faiss, query, k=5):
     temperature=0
 )
     response_text = model.invoke(prompt)
-    print(response_text.content)
+    return response_text.content
 
-db_excel = prepare_excel(r"D:\Học hành\Coder\final_data.xlsx")
-
-rag(db_excel, "Lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh năm 2023")
