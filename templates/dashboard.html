@@ -361,13 +361,19 @@
           <span>Volatility: ↑</span>
         </div>
         <div class="contrib-factors">
-          <strong>Contributing Factors:</strong>
+          <strong>Top 3 Variable Changes:</strong>
           <ul>
-            <li>High Days Sales in Receivables Index</li>
-            <li>Increased Asset Quality Index</li>
-            <li>Stable Gross Margin Index</li>
+            {% for var, value, delta in top_changes %}
+              <li>
+                <b>{{ var }}</b>: {{ "%.4f"|format(value) }}
+                (<span style="color:{% if delta > 0 %}green{% elif delta < 0 %}red{% else %}gray{% endif %}; font-weight:600;">
+                  {{ "+" if delta > 0 else "" }}{{ "%.4f"|format(delta) }}
+                </span>)
+              </li>
+            {% endfor %}
           </ul>
         </div>
+
         <!-- M-Score Components Bar Chart -->
         <div style="margin: 18px 0 0 0;">
           <div style="font-weight:600; color:#1d4ed8; font-size:1rem; margin-bottom:6px;">Component Comparison (Current vs Previous)</div>

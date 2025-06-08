@@ -1,3 +1,4 @@
+
 # ĐÂY LÀ PHẦN KHAI BÁO THƯ VIỆN
 from account_mapping_utils import setup_account_mapping, robust_get
 from flask import Flask, request, render_template, redirect, url_for, session
@@ -256,6 +257,31 @@ def benford_bar_chart(comparison_df, period):
     fig.patch.set_facecolor('#fff')
     return fig_to_base64(fig)
 
+def top_mscore_changes(m_score_table):
+    """
+    Returns a dictionary with period as key and list of top 3 changing variables as values.
+    """
+    variables = ["DSRI", "GMI", "AQI", "SGI", "DEPI", "SGAI", "LVGI", "TATA"]
+    top_changes_by_period = {}
+
+    for i in range(1, len(m_score_table)):
+        curr = m_score_table[i]
+        prev = m_score_table[i - 1]
+        period = curr["Period"]
+
+        deltas = []
+        for var in variables:
+            try:
+                delta = curr[var] - prev[var]
+                deltas.append((var, curr[var], delta))
+            except Exception:
+                continue
+
+        top3 = sorted(deltas, key=lambda x: abs(x[2]), reverse=True)[:3]
+        top_changes_by_period[period] = top3
+
+    return top_changes_by_period
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -276,6 +302,7 @@ def index():
                 # Compute M-score and interpretation for dashboard
                 m_score_table = compute_m_score_components(final_data)
                 session["m_score_table"] = m_score_table  # Store the table for chart
+                session["top_mscore_changes"] = top_mscore_changes(m_score_table)
                 if m_score_table:
                     session["m_score"] = m_score_table[-1]["M-Score"]
                 else:
@@ -320,6 +347,9 @@ def dashboard():
     selected_period = request.args.get("selected_period")
     if not selected_period or selected_period not in periods:
         selected_period = periods[-1] if periods else None
+
+    top_changes_by_period = session.get("top_mscore_changes", {})
+    top_changes = top_changes_by_period.get(selected_period.replace("-", "➞"), [])
 
     # Find the corresponding M-Score value for the selected period
     m_score_value = None
@@ -388,6 +418,7 @@ def dashboard():
         periods=periods,
         selected_period=selected_period,
         mscore_components_bar_data=json.dumps(mscore_components_bar_data),
+        top_changes=top_changes,
         # ...other context...
     )
 
