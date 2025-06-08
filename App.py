@@ -257,6 +257,17 @@ def benford_bar_chart(comparison_df, period):
     fig.patch.set_facecolor('#fff')
     return fig_to_base64(fig)
 
+m_score_explanations = {
+    "DSRI": "A significant increase in receivables relative to sales may indicate premature revenue recognition to artificially boost earnings.",
+    "GMI": "A declining gross margin may signal deteriorating business performance, prompting firms to manipulate profits.",
+    "AQI": "An increase in long-term assets—excluding property, plant and equipment—relative to total assets suggests aggressive capitalization of costs, potentially inflating earnings.",
+    "SGI": "While high growth does not imply manipulation, rapidly expanding firms may face greater pressure to meet market expectations, increasing the temptation to alter reported earnings.",
+    "DEPI": "A decline in depreciation expense relative to net fixed assets may reflect changes in accounting estimates that increase reported income.",
+    "SGAI": "A disproportionate rise in SG&A expenses compared to sales can be viewed negatively by analysts, incentivizing management to adjust earnings figures.",
+    "LVGI": "An increase in leverage (total debt relative to total assets) can pressure firms to manipulate earnings to comply with debt covenants.",
+    "TATA": "Higher accruals indicate greater use of discretionary accounting practices, which may be associated with earnings manipulation."
+}
+
 def top_mscore_changes(m_score_table):
     """
     Returns a dictionary with period as key and list of top 3 changing variables as values.
@@ -273,7 +284,8 @@ def top_mscore_changes(m_score_table):
         for var in variables:
             try:
                 delta = curr[var] - prev[var]
-                deltas.append((var, curr[var], delta))
+                explanation = m_score_explanations.get(var, "")
+                deltas.append((var, curr[var], delta, explanation))
             except Exception:
                 continue
 
