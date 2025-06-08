@@ -304,52 +304,90 @@ def index():
 def dashboard():
     if "analysis_result" not in session:
         return redirect(url_for("index"))
-    # Convert JSON back to DataFrame
     final_data = pd.read_json(session["final_data"])
     extracted_data = pd.read_json(session["extracted_data"])
-
-    # --- M-Score Chart ---
     m_score_table = session.get("m_score_table", [])
-    mscore_chart = mscore_line_chart(m_score_table) if m_score_table else None
-
-    # --- Benford Chart (for the last period) ---
     benford_results = session.get("benford_results", {})
-    if benford_results:
-        last_period = list(benford_results.keys())[-1]
-        comparison_df = pd.DataFrame.from_dict(benford_results[last_period]["comparison_df"], orient="index")
-        mad = benford_results[last_period]["mad"]  # <-- FIX: define mad
+
+    # Prepare periods for dashboard
+    year_columns = year(final_data)
+    periods = []
+    for i in range(len(year_columns) - 1):
+        y1, y2 = year_columns[i], year_columns[i + 1]
+        periods.append(f"{y1}-{y2}")
+
+    # Get selected period from GET param, default to most recent
+    selected_period = request.args.get("selected_period")
+    if not selected_period or selected_period not in periods:
+        selected_period = periods[-1] if periods else None
+
+    # Find the corresponding M-Score value for the selected period
+    m_score_value = None
+    for row in m_score_table:
+        if row.get("Period") == selected_period.replace("-", "➞"):
+            m_score_value = row.get("M-Score")
+            break
+
+    # Prepare M-Score Plotly data (all periods for the line chart)
+    mscore_plotly_data = {}
+    if m_score_table:
+        mscore_plotly_data = {
+            "x": [row["Period"] for row in m_score_table],
+            "y": [row["M-Score"] for row in m_score_table]
+        }
+
+    # Prepare Benford chart and MAD for the selected period
+    mad = None
+    plotly_benford_data = {}
+    benford_key = selected_period.replace("-", "➞") if selected_period else None
+    if benford_key and benford_key in benford_results:
+        comparison_df = pd.DataFrame.from_dict(benford_results[benford_key]["comparison_df"], orient="index")
+        mad = benford_results[benford_key]["mad"]
         plotly_benford_data = {
             "x": list(comparison_df.index),
             "benford": list(comparison_df["Benford (%)"]),
             "actual": list(comparison_df["Actual (%)"])
         }
     else:
-        print ("No Benford results found.")
-        plotly_benford_data = {}
         mad = None
+        plotly_benford_data = {}
 
-    # --- M-Score Chart Data for Plotly ---
-    mscore_plotly_data = {}
-    if m_score_table:
-        periods = [row["Period"] for row in m_score_table]
-        m_scores = [row["M-Score"] for row in m_score_table]
-        mscore_plotly_data = {
-            "x": periods,
-            "y": m_scores
+    # Prepare Beneish M-Score component bar chart data for selected period
+    mscore_components_bar_data = {}
+    variables = ["DSRI", "GMI", "AQI", "SGI", "DEPI", "SGAI", "LVGI", "TATA"]
+    # Find index of selected period in m_score_table
+    selected_period_label = selected_period.replace("-", "➞") if selected_period else None
+    idx = None
+    for i, row in enumerate(m_score_table):
+        if row.get("Period") == selected_period_label:
+            idx = i
+            break
+    if idx is not None:
+        current = m_score_table[idx]
+        previous = m_score_table[idx - 1] if idx > 0 else None
+        mscore_components_bar_data = {
+            "variables": variables,
+            "current": [current[var] for var in variables],
+            "current_label": selected_period_label.split("➞")[1] if selected_period_label and "➞" in selected_period_label else "T",
+            "previous": [previous[var] for var in variables] if previous else [None]*len(variables),
+            "previous_label": selected_period_label.split("➞")[0] if selected_period_label and "➞" in selected_period_label else "T-1"
         }
+
     table_html = final_data.to_html(classes="table table-striped", border=0)
     extracted_html = extracted_data.to_html(classes="table table-striped", border=0)
-    plotly_benford_data = plotly_benford_data or {}
+
     return render_template(
         "dashboard.html",
         result=session.get("analysis_result"),
-        m_score=session.get("m_score"),
+        m_score=m_score_value,
         table_html=table_html,
         extracted_html=extracted_html,
-        mscore_chart=mscore_chart,
         mad=mad,
         plotly_benford_data=json.dumps(plotly_benford_data),
         mscore_plotly_data=json.dumps(mscore_plotly_data),
+        periods=periods,
+        selected_period=selected_period,
+        mscore_components_bar_data=json.dumps(mscore_components_bar_data),
         # ...other context...
     )
 

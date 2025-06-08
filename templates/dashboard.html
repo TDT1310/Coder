@@ -264,13 +264,21 @@
 <main class="container">
   <section class="main-title" aria-labelledby="dashboard-title">
     <div class="main-title-left">
-      <div class="label", style="font-weight: 700; color: #1e40af; font-size: 1rem;">Financial Report Fraud Analysis</div>
+      <div class="label" style="font-weight: 700; color: #1e40af; font-size: 1rem;">Financial Report Fraud Analysis</div>
       <div class="report-details" role="list">
-        <span role="listitem">📅 Report Year: <strong>2023</strong></span>
+        <span role="listitem">📅 Analysis Period: <strong>{{ selected_period }}</strong></span>
         <span role="listitem">📄 Type: <strong> Annual</strong></span>
         <span role="listitem">📊 Data Scope: <strong> Full Statements</strong></span>
       </div>
     </div>
+    <form method="get" action="{{ url_for('dashboard') }}" style="display:flex; align-items:center; gap:12px; margin-top:12px;">
+      <select name="selected_period" style="border:1px solid #d1d5db; border-radius:8px; padding:6px 16px; font-size:1rem; font-family:inherit; outline:none;">
+        {% for period in periods %}
+          <option value="{{ period }}" {% if period == selected_period %}selected{% endif %}>{{ period }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" style="background:#2563eb; color:#fff; border:none; border-radius:8px; padding:8px 20px; font-size:1rem; font-weight:600; cursor:pointer;">Update Analysis</button>
+    </form>
   </section>
 
   <!-- Cards -->
@@ -325,9 +333,20 @@
     <!-- Left Column -->
     <div class="left-column">
       <section class="mscore-analysis" role="region" aria-labelledby="mscore-analysis-title" style="position:relative;">
-        <div class="warning-label"
-             style="position:absolute; top:16px; right:20px; display:inline-block; background:#fef3c7; color:#92400e; font-weight:700; font-size:0.875rem; padding:2px 8px; border-radius:16px; z-index:1;">
-          Warning
+        {# Set warning label and style for M-Score based on value #}
+        {% set mscore_warning_label =
+            'Unlikely Manipulator' if m_score is not none and m_score <= -2.22 else
+            'Possible' if m_score is not none and m_score > -2.22 and m_score <= -1.78 else
+            'Likely Manipulator' if m_score is not none and m_score > -1.78 else
+            'N/A' %}
+        {% set mscore_warning_style =
+            'background:#ecfdf5; color:#059669;' if m_score is not none and m_score <= -2.22 else
+            'background:#fdf2f8; color:#ec4899;' if m_score is not none and m_score > -2.22 and m_score <= -1.78 else
+            'background:#fef3c7; color:#92400e;' if m_score is not none and m_score > -1.78 else
+            'background:#e5e7eb; color:#374151;' %}
+        <div class="mscore-status-label"
+             style="{{ 'position:absolute; top:16px; right:20px; display:inline-block; font-weight:700; font-size:0.875rem; padding:2px 8px; border-radius:16px; z-index:1;' ~ mscore_warning_style }}">
+          {{ mscore_warning_label }}
         </div>
         <h3 id="mscore-analysis-title" style="margin-top:0; font-weight:700; margin-bottom:1px; font-size: 1.5rem;">M-Score Analysis</h3>
         <div class="current-value">
@@ -349,35 +368,49 @@
             <li>Stable Gross Margin Index</li>
           </ul>
         </div>
+        <!-- M-Score Components Bar Chart -->
+        <div style="margin: 18px 0 0 0;">
+          <div style="font-weight:600; color:#1d4ed8; font-size:1rem; margin-bottom:6px;">Component Comparison (Current vs Previous)</div>
+          <div id="mscore-components-bar-chart" style="width:100%;max-width:480px;height:200px;margin:auto;"></div>
+          {% if mscore_components_bar_data %}
+          <script>
+          const mscoreComponentsBarData = JSON.parse('{{ mscore_components_bar_data|safe }}');
+          if (mscoreComponentsBarData && mscoreComponentsBarData.variables && mscoreComponentsBarData.current && mscoreComponentsBarData.previous) {
+              const traceCurrent = {
+                  x: mscoreComponentsBarData.variables,
+                  y: mscoreComponentsBarData.current,
+                  name: mscoreComponentsBarData.current_label || 'Current',
+                  type: 'bar',
+                  marker: {color: '#1d4ed8'},
+                  opacity: 0.5,
+              };
+              const tracePrev = {
+                  x: mscoreComponentsBarData.variables,
+                  y: mscoreComponentsBarData.previous,
+                  name: mscoreComponentsBarData.previous_label || 'Previous',
+                  type: 'bar',
+                  marker: {color: '#be1862'},
+                  opacity: 0.5,
+              };
+              const layout = {
+                  barmode: 'group',
+                  title: '',
+                  xaxis: {title: 'Component', tickfont: {size: 12}},
+                  yaxis: {title: 'Value', tickfont: {size: 12}},
+                  legend: {orientation: 'h', y: -0.3},
+                  plot_bgcolor: '#fff',
+                  autosize: true,
+                  margin: { t: 10, l: 30, r: 10, b: 40 },
+                  height: 200,
+                  width: null
+              };
+              Plotly.newPlot('mscore-components-bar-chart', [traceCurrent, tracePrev], layout, {responsive: true});
+          }
+          </script>
+          {% endif %}
+        </div>
         <div class="yoy-value">Year-over-year: +0.08</div>
         <div class="small-line-graph" aria-label="Small line graph showing rising trend"></div>
-        <!-- Interactive M-Score Chart -->
-        <div id="mscore-interactive-chart" style="width:100%;height:300px;"></div>
-        <script>
-        const mscoreData = {{ mscore_plotly_data|default('{}')|safe }};
-        if (mscoreData && mscoreData.x && mscoreData.x.length > 0) {
-            const trace = {
-                x: mscoreData.x,
-                y: mscoreData.y,
-                type: 'scatter',
-                mode: 'lines+markers+text',
-                name: 'M-Score',
-                line: { color: '#1d4ed8', width: 3 },
-                marker: { color: '#1d4ed8', size: 8 },
-                text: mscoreData.y.map(y => y.toFixed(2)),
-                textposition: 'top center'
-            };
-            const layout = {
-                title: "M-Score Over Time",
-                xaxis: { title: "Period" },
-                yaxis: { title: "M-Score" },
-                plot_bgcolor: "#fff",
-                autosize: true,
-                margin: { t: 40, l: 40, r: 20, b: 40 }
-            };
-            Plotly.newPlot('mscore-interactive-chart', [trace], layout, {responsive: true});
-        }
-        </script>
       </section>
     </div>
 
@@ -405,46 +438,83 @@
           </span>
         </div>
         <div class="benford-charts" aria-hidden="true">
-          <div class="benford-chart" aria-label="Benford Bar Chart"></div>
-          <div class="benford-chart" aria-label="Benford Line Chart"></div>
+          <div id="benford-interactive-chart" style="width:100%;max-width:480px;height:200px;margin:auto;"></div>
+          {% if plotly_benford_data %}
+          <script>
+          const benfordData = JSON.parse('{{ plotly_benford_data|safe }}');
+          if (benfordData && benfordData.x && benfordData.benford && benfordData.actual) {
+              const trace1 = {
+                  x: benfordData.x,
+                  y: benfordData.benford,
+                  name: "Benford (%)",
+                  type: 'bar',
+                  marker: {color: '#F8BBD0'}, // light pink
+                  opacity: 0.6,
+              };
+              const trace2 = {
+                  x: benfordData.x,
+                  y: benfordData.actual,
+                  name: "Actual (%)",
+                  type: 'bar',
+                  marker: {color: '#81D4FA'}, // light blue
+                  opacity: 0.6,
+              };
+              const layout = {
+                  barmode: 'group',
+                  title: '',
+                  xaxis: {title: 'Leading Digit', tickfont: {size: 12}},
+                  yaxis: {title: 'Percentage', tickfont: {size: 12}},
+                  legend: {orientation: 'h', y: -0.2},
+                  plot_bgcolor: '#fff',
+                  autosize: true,
+                  margin: { t: 10, l: 30, r: 10, b: 40 },
+                  height: 200,
+                  width: null
+              };
+              Plotly.newPlot('benford-interactive-chart', [trace1, trace2], layout, {responsive: true});
+          }
+          </script>
+          {% endif %}
         </div>
         <div class="benford-legend">
           <span><span class="benford-legend-color benford-actual"></span>Actual</span>
           <span><span class="benford-legend-color benford-expected"></span>Expected</span>
         </div>
-        <!-- Interactive Benford Chart -->
-        <div id="benford-interactive-chart" style="width:100%;height:300px;"></div>
-        <script>
-        const benfordData = {{ plotly_benford_data|default('{}')|safe }};
-        if (benfordData && Object.keys(benfordData).length > 0) {
-            const trace1 = {
-              x: benfordData.x,
-              y: benfordData.benford,
-              name: 'Benford (%)',
-              type: 'bar',
-              marker: {color: '#ec4899'}
-            };
-            const trace2 = {
-              x: benfordData.x,
-              y: benfordData.actual,
-              name: 'Actual (%)',
-              type: 'bar',
-              marker: {color: '#be1862'}
-            };
-            const layout = {
-              barmode: 'group',
-              title: "Benford's Law vs Actual",
-              xaxis: {title: 'Leading Digit'},
-              yaxis: {title: 'Percentage'},
-              plot_bgcolor: "#fff",
-              autosize: true,
-              margin: { t: 40, l: 40, r: 20, b: 40 }
-            };
-            Plotly.newPlot('benford-interactive-chart', [trace1, trace2], layout, {responsive: true});
-        }
-        </script>
       </section>
     </div>
+  </section>
+
+  <!-- M-Score Trend Chart Block (Full Width) -->
+  <section class="mscore-trend-block" style="background:white; border-radius:8px; margin:24px 0; padding:24px 24px 12px 24px; box-shadow:0 2px 8px rgb(0 0 0 / 0.05);">
+    <h3 style="font-weight:700; font-size:1.25rem; color:#1d4ed8; margin-bottom:12px;">M-Score Trend (All Periods)</h3>
+    <div id="mscore-interactive-chart" style="width:100%;height:320px;"></div>
+    {% if mscore_plotly_data %}
+    <script>
+    const mscoreData = JSON.parse('{{ mscore_plotly_data|safe }}');
+    if (mscoreData && mscoreData.x && mscoreData.y) {
+        const trace = {
+            x: mscoreData.x,
+            y: mscoreData.y,
+            type: 'scatter',
+            mode: 'lines+markers+text',
+            name: 'M-Score',
+            line: { color: '#1d4ed8', width: 3 },
+            marker: { color: '#1d4ed8', size: 8 },
+            text: mscoreData.y.map(y => y.toFixed(2)),
+            textposition: 'top center'
+        };
+        const layout = {
+            title: "M-Score Over Time",
+            xaxis: { title: "Period" },
+            yaxis: { title: "M-Score" },
+            plot_bgcolor: "#fff",
+            autosize: true,
+            margin: { t: 40, l: 40, r: 20, b: 40 }
+        };
+        Plotly.newPlot('mscore-interactive-chart', [trace], layout, {responsive: true});
+    }
+    </script>
+    {% endif %}
   </section>
 
   <!-- Recommendations & Next Steps (moved outside .bottom-row for full width) -->
@@ -500,6 +570,23 @@ document.querySelectorAll('.warning-label').forEach(function(label) {
   } else if (level === 'low') {
     label.style.background = '#ecfdf5';
     label.style.color = '#059669';
+  } else {
+    label.style.background = '#e5e7eb';
+    label.style.color = '#374151';
+  }
+});
+// Add this block for dynamic M-Score status label color:
+document.querySelectorAll('.mscore-status-label').forEach(function(label) {
+  const level = label.textContent.trim().toLowerCase();
+  if (level === 'unlikely manipulator') {
+    label.style.background = '#ecfdf5';
+    label.style.color = '#059669';
+  } else if (level === 'possible') {
+    label.style.background = '#fef3c7';
+    label.style.color = '#92400e';
+  } else if (level === 'likely manipulator') {
+    label.style.background = '#fdf2f8';
+    label.style.color = '#ec4899';
   } else {
     label.style.background = '#e5e7eb';
     label.style.color = '#374151';
