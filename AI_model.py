@@ -1,47 +1,60 @@
+import os
 from langchain.document_loaders import UnstructuredExcelLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain.vectorstores.faiss import FAISS
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-# Build a function for Excel data
+EMBEDDING_MODEL = "models/text-embedding-004"
+CHAT_MODEL = "models/gemini-2.0-flash-lite"
+GOOGLE_API_KEY = "AIzaSyB_sMbpqCpd9u0HX-Fj7P9-x6S8YmA_fm4"
+
+def get_faiss_cache_path(file_path):
+    return file_path + ".faiss"
+
 def prepare_excel(file_path):
+    cache_path = get_faiss_cache_path(file_path)
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model=EMBEDDING_MODEL,
+        google_api_key=GOOGLE_API_KEY
+    )
+    if os.path.exists(cache_path):
+        db_faiss = FAISS.load_local(
+            cache_path, 
+            embeddings, 
+            allow_dangerous_deserialization=True  # <-- add this!
+        )
+        print("Loaded FAISS index from cache.")
+        return db_faiss
+
     loader = UnstructuredExcelLoader(file_path)
     data = loader.load()
 
-    # Split the text into chunks
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=15000, 
-        chunk_overlap=1000
+        chunk_size=5000, 
+        chunk_overlap=200,
     )
     chunks = text_splitter.split_documents(data)
-    # Create embeddings with the OpenAI model
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004",
-        google_api_key="AIzaSyB_sMbpqCpd9u0HX-Fj7P9-x6S8YmA_fm4"  # <<-- quan trọng!
-  )
     db_faiss = FAISS.from_documents(chunks, embeddings)
+
+    db_faiss.save_local(cache_path)
+    print("Saved FAISS index to cache.")
+
     return db_faiss
 
 def rag(db_faiss, query, k=5):
-    # Try the retrieval system
     output_retrieval = db_faiss.similarity_search(query, k=k)
-
-    # Merge the context
     output_retrieval_merged = "\n".join([doc.page_content for doc in output_retrieval])
-
-    # Define the prompt
-    # Create a prompt for the rag system
     prompt = f"""
-    based on this context: {output_retrieval_merged}
-    answer the following question: {query}
-    if you don't have information on the answer, say you don't know
-    """
+    Based on this context: {output_retrieval_merged}  
+Answer the following question: {query}  
+
+If you don't have enough information to answer, say "I don't know."
+"""
     model = ChatGoogleGenerativeAI(
-    google_api_key="AIzaSyB_sMbpqCpd9u0HX-Fj7P9-x6S8YmA_fm4",
-    model="models/gemini-2.0-flash-lite",  # hoặc "gemini-1.5-pro-latest"
-    temperature=0
-)
+        google_api_key=GOOGLE_API_KEY,
+        model=CHAT_MODEL,
+        temperature=0
+    )
     response_text = model.invoke(prompt)
     return response_text.content
 

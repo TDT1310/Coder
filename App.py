@@ -353,16 +353,7 @@ def dashboard():
         return redirect(url_for("index"))
     final_data = pd.read_json(session["final_data"])
     m_score_table = session.get("m_score_table", [])
-    benford_results = session.get("benford_results", {}) 
-    excel_file_path = session.get("excel_file_path")
-
-    # Write final_data to a temp Excel file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-        final_data.to_excel(tmp.name, index=False)
-        excel_file_path = tmp.name
-    excel_df = None
-    if excel_file_path:
-        excel_df = prepare_excel(excel_file_path)
+    benford_results = session.get("benford_results", {})
 
     # Prepare periods for dashboard
     year_columns = year(final_data)
@@ -413,7 +404,6 @@ def dashboard():
     # Prepare Beneish M-Score component bar chart data for selected period
     mscore_components_bar_data = {}
     variables = ["DSRI", "GMI", "AQI", "SGI", "DEPI", "SGAI", "LVGI", "TATA"]
-    # Find index of selected period in m_score_table
     selected_period_label = selected_period.replace("-", "➞") if selected_period else None
     idx = None
     for i, row in enumerate(m_score_table):
@@ -448,8 +438,90 @@ def dashboard():
         top_changes=top_changes,
         qa_history=qa_history,
         latest_answer=latest_answer,
-        latest_qa=latest_qa,  # <-- Add this line
-        # ...other context...
+        latest_qa=latest_qa,
+    )
+
+@app.route("/dashboard_analysis", methods=["GET"])
+def dashboard_analysis():
+    final_data = pd.read_json(session["final_data"])
+    m_score_table = session.get("m_score_table", [])
+    benford_results = session.get("benford_results", {})
+
+    # Prepare periods for dashboard
+    year_columns = year(final_data)
+    periods = []
+    for i in range(len(year_columns) - 1):
+        y1, y2 = year_columns[i], year_columns[i + 1]
+        periods.append(f"{y1}-{y2}")
+
+    selected_period = request.args.get("selected_period")
+    if not selected_period or selected_period not in periods:
+        selected_period = periods[-1] if periods else None
+
+    top_changes_by_period = session.get("top_mscore_changes", {})
+    top_changes = top_changes_by_period.get(selected_period.replace("-", "➞"), [])
+
+    # Find the corresponding M-Score value for the selected period
+    m_score_value = None
+    for row in m_score_table:
+        if row.get("Period") == selected_period.replace("-", "➞"):
+            m_score_value = row.get("M-Score")
+            break
+
+    # Prepare M-Score Plotly data (all periods for the line chart)
+    mscore_plotly_data = {}
+    if m_score_table:
+        mscore_plotly_data = {
+            "x": [row["Period"] for row in m_score_table],
+            "y": [row["M-Score"] for row in m_score_table]
+        }
+
+    # Prepare Benford chart and MAD for the selected period
+    mad = None
+    plotly_benford_data = {}
+    benford_key = selected_period.replace("-", "➞") if selected_period else None
+    if benford_key and benford_key in benford_results:
+        comparison_df = pd.DataFrame.from_dict(benford_results[benford_key]["comparison_df"], orient="index")
+        mad = benford_results[benford_key]["mad"]
+        plotly_benford_data = {
+            "x": list(comparison_df.index),
+            "benford": list(comparison_df["Benford (%)"]),
+            "actual": list(comparison_df["Actual (%)"])
+        }
+    else:
+        mad = None
+        plotly_benford_data = {}
+
+    # Prepare Beneish M-Score component bar chart data for selected period
+    mscore_components_bar_data = {}
+    variables = ["DSRI", "GMI", "AQI", "SGI", "DEPI", "SGAI", "LVGI", "TATA"]
+    selected_period_label = selected_period.replace("-", "➞") if selected_period else None
+    idx = None
+    for i, row in enumerate(m_score_table):
+        if row.get("Period") == selected_period_label:
+            idx = i
+            break
+    if idx is not None:
+        current = m_score_table[idx]
+        previous = m_score_table[idx - 1] if idx > 0 else None
+        mscore_components_bar_data = {
+            "variables": variables,
+            "current": [current[var] for var in variables],
+            "current_label": selected_period_label.split("➞")[1] if selected_period_label and "➞" in selected_period_label else "T",
+            "previous": [previous[var] for var in variables] if previous else [None]*len(variables),
+            "previous_label": selected_period_label.split("➞")[0] if selected_period_label and "➞" in selected_period_label else "T-1"
+        }
+
+    return render_template(
+        "dashboard_analysis_partial.html",
+        m_score=m_score_value,
+        mad=mad,
+        plotly_benford_data=json.dumps(plotly_benford_data),
+        mscore_plotly_data=json.dumps(mscore_plotly_data),
+        mscore_components_bar_data=json.dumps(mscore_components_bar_data),
+        top_changes=top_changes,
+        selected_period=selected_period,
+        periods=periods,
     )
 
 @app.route("/ask", methods=["POST"])
