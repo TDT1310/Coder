@@ -2,7 +2,7 @@
 from account_mapping_utils import setup_account_mapping, robust_get
 from flask import Flask, request, render_template, redirect, url_for, session
 from flask_session import Session
-from App1 import prepare_excel, rag 
+from AI_model import prepare_excel, rag 
 import pandas as pd
 import numpy as np
 import matplotlib

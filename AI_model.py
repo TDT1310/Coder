@@ -11,7 +11,7 @@ def prepare_excel(file_path):
 
     # Split the text into chunks
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=10000,
+        chunk_size=15000, 
         chunk_overlap=1000
     )
     chunks = text_splitter.split_documents(data)
