@@ -615,11 +615,132 @@ def ask():
     question = request.form.get("user_question")
     excel_file_path = session.get("excel_file_path")
     excel_df = prepare_excel(excel_file_path) if excel_file_path else None
+
+    # Indicate that the AI is generating an answer
+    session["latest_answer"] = "Generating answer..."
+
     answer = rag(excel_df, question) if excel_df else "Knowledge base not available."
     answer_html = markdown.markdown(answer, extensions=["fenced_code", "tables", "nl2br"])
+
     # Save latest Q&A to session
     session["latest_qa"] = {"question": question, "answer": answer_html}
+    session["latest_answer"] = answer_html  # Update with the actual answer
+
     return answer_html  # Return only the answer HTML
+
+@app.route("/rag_risk_analysis", methods=["POST"])
+def rag_risk_analysis():
+    selected_period = request.form.get("selected_period")
+    m_score_table = session.get("m_score_table", [])
+    benford_results = session.get("benford_results", {})
+    m_score = None
+    mad = None
+    # Find M-Score for selected period
+    if selected_period and m_score_table:
+        for row in m_score_table:
+            if row.get("Period") == selected_period.replace("-", "➞"):
+                m_score = row.get("M-Score")
+                break
+    # Find MAD for selected period
+    if selected_period and benford_results:
+        benford_key = selected_period.replace("-", "➞")
+        if benford_key in benford_results:
+            mad = benford_results[benford_key]["mad"]
+    excel_file_path = session.get("excel_file_path")
+    excel_db = prepare_excel(excel_file_path) if excel_file_path else None
+    output_retrieval_merged = ""
+    if excel_db:
+        # Use the same retrieval as in rag() for context
+        retrieved_docs = excel_db.similarity_search("financial statement manipulation", k=5)
+        output_retrieval_merged = "\n".join([doc.page_content for doc in retrieved_docs])
+    # Compose the detailed prompt with wrappers for M-Score and MAD
+    prompt = f"""
+You are a financial forensic analyst AI. Based on the financial context below, evaluate the likelihood of financial statement manipulation using the following three methods:
+
+--------------------
+📄 Context:
+{output_retrieval_merged}
+--------------------
+
+<<M_SCORE>>{m_score}<</M_SCORE>>
+<<MAD>>{mad}<</MAD>>
+
+🎯 Your task is to:
+1. Compute and assign a score for each of the 3 fraud detection components:
+   - **Beneish M-Score**
+   - **Benford MAD**
+   - **Red Flag Count**
+   Each is scored from 0 to 2 based on the following rules:
+
+🔹 **Scoring Criteria**:
+- **M-Score**:
+  - ≤ -2.22 → 2 points (no alert)
+  - -2.22 < M ≤ -1.78 → 1 point (mild warning)
+  - > -1.78 → 0 points (strong warning)
+
+- **Benford MAD**:
+  - < 0.006 → 2 points
+  - 0.006 ≤ MAD < 0.012 → 1 point
+  - ≥ 0.012 → 0 points
+
+- **Red Flags** (each count as 1):
+  - < 2 red flags → 1 point
+  - ≥ 2 red flags → 0 points
+
+🔍 Red flags to detect (explain if present):
+- CFO / Net Income < 0 or < 0.5 for 2 consecutive years
+- Other Receivables / Total Receivables > 0.5
+- Bad Debt Provision / Receivables > 0.3
+- CFO is negative while Net Income is positive for 2 years
+- Revenue growth > 50% YoY but CFO doesn't grow accordingly
+
+--------------------
+✅ Your output should include:
+1. A total score out of 6
+2. A brief summary for:
+   - The M-Score value, and its risk level
+   - The Benford MAD value and its deviation level
+   - The number of red flags and what they are
+3. A conclusion with a risk interpretation:
+   - 1 point: Extremely high risk of manipulation
+   - 2 points: Very high risk of manipulation
+   - 3 points: High risk of manipulation
+   - 4 points: Slight risk - Needs attention
+   - 5 points: Low risk - No action needed
+   - 6 points: Very low risk - No action needed
+4. how each of the red flags are calculated and their values and therir formulas
+
+If the context lacks enough data, respond with:  
+**"I do not have enough financial data to compute a fraud risk score."**  and what data is lackings
+"""
+    if excel_db:
+        rag_result = rag(excel_db, prompt)
+    else:
+        rag_result = "Knowledge base not available."
+    rag_result_html = markdown.markdown(rag_result, extensions=["fenced_code", "tables", "nl2br"])
+    # Extract the conclusion (must be one of the 6 allowed strings)
+    allowed_conclusions = [
+        "Extremely high risk of manipulation",
+        "Very high risk of manipulation",
+        "High risk of manipulation",
+        "Slight risk - Needs attention",
+        "Low risk - No action needed",
+        "Very low risk - No action needed"
+    ]
+    conclusion = None
+    # Try to find an allowed conclusion in the HTML (bolded or not)
+    for allowed in allowed_conclusions:
+        if allowed in rag_result_html:
+            conclusion = allowed
+            break
+    if not conclusion:
+        # Fallback: search in plain text result
+        for allowed in allowed_conclusions:
+            if allowed in rag_result:
+                conclusion = allowed
+                break
+    session['rag_conclusion'] = conclusion or ''
+    return rag_result_html
 
 if __name__ == "__main__":
     app.run(debug=True)

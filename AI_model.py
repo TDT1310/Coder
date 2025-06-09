@@ -3,6 +3,8 @@ from langchain.document_loaders import UnstructuredExcelLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain.vectorstores.faiss import FAISS
+import langdetect
+
 
 EMBEDDING_MODEL = "models/text-embedding-004"
 CHAT_MODEL = "models/gemini-2.0-flash-lite"
@@ -42,13 +44,20 @@ def prepare_excel(file_path):
     return db_faiss
 
 def rag(db_faiss, query, k=5):
+    lang = langdetect.detect(query)
     output_retrieval = db_faiss.similarity_search(query, k=k)
     output_retrieval_merged = "\n".join([doc.page_content for doc in output_retrieval])
-    prompt = f"""
+    if lang == 'vi':
+        prompt = f"""
+    Dựa trên nội dung sau: {output_retrieval_merged}
+    Hãy trả lời câu hỏi sau:{query}
+    Nếu bạn không có đủ thông tin để đưa ra câu trả lời, hãy nói: "Tôi không biết."
+"""
+    else:
+        prompt = f"""
     Based on this context: {output_retrieval_merged}  
-Answer the following question: {query}  
-
-If you don't have enough information to answer, say "I don't know."
+    Answer the following question: {query}  
+    If you don't have enough information to answer, say "I don't know."
 """
     model = ChatGoogleGenerativeAI(
         google_api_key=GOOGLE_API_KEY,

@@ -1,0 +1,40 @@
+<!-- Partial template for the RAG-based risk analysis block -->
+<section class="rag-risk-analysis" style="background:white; border-radius:8px; margin:24px 0; padding:24px 24px 18px 24px; box-shadow:0 2px 8px rgb(0 0 0 / 0.05);">
+  <h3 style="font-weight:700; font-size:1.15rem; color:#1d4ed8; margin-bottom:12px;">AI Risk Analysis (RAG)</h3>
+  <div id="rag-risk-answer-block" style="margin-top:1.2em;">
+    {% if rag_risk_result %}
+      <div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">
+        <b style="color:#1e40af;">Analysis:</b> {{ rag_risk_result|safe }}
+      </div>
+    {% else %}
+      <div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">Generating risk analysis...</div>
+    {% endif %}
+  </div>
+</section>
+<script>
+function fetchRagRiskAnalysis(period) {
+    document.getElementById('rag-risk-answer-block').innerHTML = '<div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">Generating risk analysis...</div>';
+    fetch('/rag_risk_analysis', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'selected_period=' + encodeURIComponent(period)
+    })
+    .then(response => response.text())
+    .then(answerHtml => {
+        document.getElementById('rag-risk-answer-block').innerHTML =
+            '<div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">' +
+            '<b style="color:#1e40af;">Analysis:</b> ' + answerHtml +
+            '</div>';
+    });
+}
+window.addEventListener('DOMContentLoaded', function() {
+    var period = document.getElementById('selected_period') ? document.getElementById('selected_period').value : null;
+    if (period) fetchRagRiskAnalysis(period);
+    var periodSelect = document.getElementById('selected_period');
+    if (periodSelect) {
+        periodSelect.addEventListener('change', function() {
+            fetchRagRiskAnalysis(this.value);
+        });
+    }
+});
+</script>

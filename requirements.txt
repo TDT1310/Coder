@@ -13,3 +13,4 @@ faiss-cpu
 langchain-google-genai
 markdown
 networkx
+langdetect

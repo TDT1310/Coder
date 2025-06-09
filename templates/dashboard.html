@@ -247,6 +247,18 @@
     .submitter-info { justify-content: flex-start; }
     .header-right { gap: 8px; }
   }
+  .delta-positive {
+    color: green;
+    font-weight: 600;
+  }
+  .delta-negative {
+    color: red;
+    font-weight: 600;
+  }
+  .delta-neutral {
+    color: gray;
+    font-weight: 600;
+  }
 </style>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
@@ -288,7 +300,10 @@
       <div class="card-header" style="flex-direction:column; gap:2px;">
         <i class="fi fi-rr-analytics-magnifying-glass" style="font-size: 30px; color: #eab308;"></i>
         <div class="label" id="overall-fraud-status-title">Overall Fraud Status</div>
-        <div class="value" style="font-weight:700; font-size:1.35rem; margin-bottom:4px; color: #a16207;">Review Needed</div>
+        <div class="value" id="overall-fraud-status-value" style="font-weight:700; font-size:1.35rem; margin-bottom:4px; color: #a16207;">
+          {{ session['rag_conclusion'] if session['rag_conclusion'] else 'Review Needed' }}
+        </div>
+        <!-- This card now always shows the RAG risk analysis conclusion, not a score -->
       </div>
     </article>
 
@@ -370,6 +385,9 @@
     </article>
   </section>
 
+  <!-- RAG Risk Analysis Block -->
+  {% include 'rag_risk_analysis_block.html' %}
+
   <!-- Analysis row -->
   <section class="bottom-row" aria-label="Detailed Analysis Section">
     <!-- Left Column -->
@@ -409,7 +427,7 @@
               <li>
                 <strong>{{ var }}</strong>: {{ "%.4f"|format(value) }}
                 {% if delta is not none %}
-                  (<span style="color:{% if delta > 0 %}green{% elif delta < 0 %}red{% else %}gray{% endif %}; font-weight:600;">
+                  (<span class="{% if delta > 0 %}delta-positive{% elif delta < 0 %}delta-negative{% else %}delta-neutral{% endif %}">
                     {{ "+" if delta > 0 else "" }}{{ "%.4f"|format(delta) }}
                   </span>)
                 {% endif %}
@@ -421,8 +439,8 @@
 
         <!-- M-Score Components Bar Chart -->
         <div style="margin: 18px 0 0 0;">
-          <div style="font-weight:600; color:#1d4ed8; font-size:1rem; margin-bottom:6px;">Component Comparison (Current vs Previous)</div>
-          <div id="mscore-components-bar-chart" style="width:100%;max-width:480px;height:200px;margin:auto;"></div>
+          <div style="font-weight:600; color:#1d4ed8; font-size:1rem; margin-bottom:20px; text-align: center;">Component Comparison (Current vs Previous)</div>
+          <div id="mscore-components-bar-chart" style="width:100%;max-width:500px;height:240px;margin:auto;overflow:hidden;"></div>
           {% if mscore_components_bar_data %}
           <script>
           const mscoreComponentsBarData = JSON.parse('{{ mscore_components_bar_data|safe }}');
@@ -448,20 +466,18 @@
                   title: '',
                   xaxis: {title: 'Component', tickfont: {size: 12}},
                   yaxis: {title: 'Value', tickfont: {size: 12}},
-                  legend: {orientation: 'h', y: -0.3},
+                  legend: {orientation: 'h', y: -0.7},
                   plot_bgcolor: '#fff',
                   autosize: true,
-                  margin: { t: 10, l: 30, r: 10, b: 40 },
-                  height: 200,
-                  width: null
+                  margin: { t: 10, l: 30, r: 10, b: 80 },
+                  height: 240,
+                  width: 500 // Reduced size to match Benford chart
               };
               Plotly.newPlot('mscore-components-bar-chart', [traceCurrent, tracePrev], layout, {responsive: true});
           }
           </script>
           {% endif %}
         </div>
-        <div class="yoy-value">Year-over-year: +0.08</div>
-        <div class="small-line-graph" aria-label="Small line graph showing rising trend"></div>
       </section>
     </div>
 
@@ -469,7 +485,7 @@
     <div class="right-column">
       <section class="benford-analysis" role="region" aria-labelledby="benford-analysis-title"
         style="position:relative; min-height:420px; height:100%; display:flex; flex-direction:column; justify-content:space-between;">
-        <div>
+        <div style="flex:0 0 auto;">
           <div class="warning-label"
                style="position:absolute; top:16px; right:20px; display:inline-block; background:#fef3c7; color:#ec4899; font-weight:700; font-size:0.875rem; padding:2px 8px; border-radius:16px; z-index:1;">
             {% if mad is not none %}
@@ -515,8 +531,9 @@
             </p>
           {% endif %}
         </div>
-        <div class="benford-charts" aria-hidden="true" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-          <div id="benford-interactive-chart" style="width:100%;height:220px;max-width:480px;margin:auto;"></div>
+        <div class="benford-charts" aria-hidden="true" style="flex:1 1 auto; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; min-height:340px;">
+          <div style="font-weight:600; color:#1d4ed8; font-size:1rem; margin-bottom:20px; text-align: center; min-height:24px;">Leading Digit Distribution Analysis</div>
+          <div id="benford-interactive-chart" style="width:100%;max-width:500px;height:240px;margin:auto;overflow:hidden;"></div>
           {% if plotly_benford_data %}
           <script>
           const benfordData = JSON.parse('{{ plotly_benford_data|safe }}');
@@ -530,7 +547,6 @@
               opacity: 0.7,
               hovertemplate: 'Benford (%): %{y:.2f}<extra></extra>',
             };
-
             const trace2 = {
               x: benfordData.x,
               y: benfordData.actual,
@@ -540,36 +556,27 @@
               opacity: 0.8,
               hovertemplate: 'Actual (%): %{y:.2f}<extra></extra>',
             };
-
             const layout = {
               barmode: 'group',
               title: '',
               xaxis: {
                 title: 'Leading Digit',
-                tickfont: { size: 13 },
-                titlefont: { size: 14 }
+                tickfont: { size: 12 },
               },
               yaxis: {
                 title: 'Percentage',
-                tickfont: { size: 13 },
-                titlefont: { size: 14 }
+                tickfont: { size: 12 },
               },
               legend: {
                 orientation: 'h',
-                y: -0.3,
-                font: { size: 12 }
+                y: -0.7,
               },
               plot_bgcolor: '#ffffff',
-              paper_bgcolor: '#ffffff',
-              margin: { t: 10, l: 40, r: 10, b: 60 },
-              height: 220, // Match the height set in the div above
-              autosize: true
+              margin: { t: 10, l: 30, r: 10, b: 80 },
+              height: 240,
+              width: 500 // Reduced size to match new container
             };
-            const config = {
-              responsive: true,
-              displayModeBar: false
-            };
-            Plotly.newPlot('benford-interactive-chart', [trace1, trace2], layout, config);
+            Plotly.newPlot('benford-interactive-chart', [trace1, trace2], layout, {responsive: true});
           }
           </script>
           {% endif %}
@@ -636,6 +643,11 @@
   document.getElementById('qa-form').addEventListener('submit', function(e) {
       e.preventDefault();
       const question = document.getElementById('user_question').value;
+      // Show the "Generating answer..." message
+      document.getElementById('qa-answer-block').innerHTML = '<div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">' +
+              '<b style="color:#1e40af;">Q:</b> ' + question + '<br>' +
+              '<b style="color:#1e40af;">A:</b> Generating answer...' +
+              '</div>';
       fetch('/ask', {
           method: 'POST',
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -739,6 +751,10 @@ document.querySelectorAll('.mscore-status-label').forEach(function(label) {
 
 <div id="analysis-block">
   {# Place your analysis/chart block here as usual #}
+  <!-- Hidden span for JS update: always shows the RAG conclusion, not a score -->
+  <span id="rag-conclusion-value" style="display:none;">
+    {{ session['rag_conclusion'] if session['rag_conclusion'] else 'Review Needed' }}
+  </span>
 </div>
 
 <script>
@@ -748,6 +764,11 @@ document.getElementById('selected_period').addEventListener('change', function()
       .then(response => response.text())
       .then(html => {
         document.getElementById('analysis-block').innerHTML = html;
+        // Update the summary card value from the hidden span in the new analysis block
+        const newConclusion = document.getElementById('rag-conclusion-value')?.textContent?.trim();
+        if (newConclusion) {
+          document.getElementById('overall-fraud-status-value').textContent = newConclusion;
+        }
         // If your charts need to be re-initialized, you may need to call Plotly.newPlot again here.
       });
 });
