@@ -729,5 +729,28 @@ document.querySelectorAll('.mscore-status-label').forEach(function(label) {
   }
 });
 </script>
+<form id="period-form" style="display:flex; align-items:center; gap:12px; margin-top:12px;">
+  <select name="selected_period" id="selected_period">
+    {% for period in periods %}
+      <option value="{{ period }}" {% if period == selected_period %}selected{% endif %}>{{ period }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div id="analysis-block">
+  {# Place your analysis/chart block here as usual #}
+</div>
+
+<script>
+document.getElementById('selected_period').addEventListener('change', function() {
+    const period = this.value;
+    fetch(`/dashboard_analysis?selected_period=${encodeURIComponent(period)}`)
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('analysis-block').innerHTML = html;
+        // If your charts need to be re-initialized, you may need to call Plotly.newPlot again here.
+      });
+});
+</script>
 </body>
 </html>
