@@ -43,7 +43,6 @@ def dedup_names(names):
     return result
 
 def Data_extract(uploaded_file, sheet_name):
-
     """
     Extracts the financial data table from an Excel sheet, detects header,
     aligns with bold formatting, and builds a unique Full Account label.
@@ -53,7 +52,7 @@ def Data_extract(uploaded_file, sheet_name):
     data.fillna(0, inplace=True)
 
     def is_year(s):
-        if isinstance(s, (np.int64, np.float64, int, float)):
+        if isinstance(s, (np.integer, int, float, np.floating)):
             s = str(int(s))
         if isinstance(s, str):
             return bool(re.fullmatch(r'20\d{2}|19\d{2}', s.strip()))
@@ -69,8 +68,7 @@ def Data_extract(uploaded_file, sheet_name):
 
     # Step 2: Read again with detected header row
     df = pd.read_excel(uploaded_file, sheet_name=sheet_name, header=header_row_index)
-    df = df.dropna(axis=1, how='all')
-    df = df.dropna(axis=0, how='all')
+    df = df.dropna(axis=1, how='all').dropna(axis=0, how='all')
     df = df.loc[:, ~df.columns.duplicated()]
     df = df.reset_index(drop=True)
     df.columns = [str(col).strip() for col in df.columns]
@@ -80,44 +78,35 @@ def Data_extract(uploaded_file, sheet_name):
         non_null = col.dropna()
         if len(non_null) == 0:
             return 0
-        num_str = non_null.apply(lambda x: isinstance(x, str)).sum()
-        return num_str / len(non_null)
+        return non_null.apply(lambda x: isinstance(x, str)).mean()
 
     ratios = {col: ratio_string(df[col]) for col in df.columns}
-    ratios_sorted = sorted(ratios.items(), key=lambda x: x[1], reverse=True)
-    account_col = ratios_sorted[0][0]
-    account_col_idx = df.columns.get_loc(account_col)+1
+    account_col = max(ratios, key=ratios.get)
+    account_col_idx = df.columns.get_loc(account_col) + 1
 
     # Step 4: Get IsBold info for the account column (aligning to actual data table)
     wb = openpyxl.load_workbook(uploaded_file, data_only=True)
     ws = wb[sheet_name]
-    # openpyxl is 1-based, pandas is 0-based (+2 = header + 1)
-    first_data_row = header_row_index + 2
-    is_bold = []
-    for idx, row in enumerate(ws.iter_rows(min_row=first_data_row, max_row=ws.max_row, min_col=account_col_idx, max_col=account_col_idx)):
-        cell = row[0]
-        is_bold.append(cell.font.bold if cell.font else False)
+    first_data_row = header_row_index + 2  # openpyxl is 1-based, pandas is 0-based (+2 = header + 1)
+    is_bold = [row[0].font.bold if row[0].font else False
+               for row in ws.iter_rows(min_row=first_data_row, max_row=ws.max_row, min_col=account_col_idx, max_col=account_col_idx)]
     is_bold = is_bold[:len(df)]
     df['IsBold'] = is_bold
 
     # Step 5: Build Full Account with parent context and sheet name
     full_accounts = []
     parent_stack = []
-    for idx, row in df.iterrows():
+    for _, row in df.iterrows():
         label = str(row[account_col]).strip()
         bold = row['IsBold']
         if bold:
             parent_stack = [label]
             full_account = f"{sheet_name} - {label}"
         else:
-            if parent_stack:
-                full_account = f"{sheet_name} - {' - '.join(parent_stack)} - {label}"
-            else:
-                full_account = f"{sheet_name} - {label}"
+            full_account = f"{sheet_name} - {' - '.join(parent_stack)} - {label}" if parent_stack else f"{sheet_name} - {label}"
         full_account = re.sub(r'\s+', ' ', full_account)
         full_accounts.append(full_account)
-    df['Full Account'] = full_accounts
-    df['Full Account'] = dedup_names(df['Full Account'])
+    df['Full Account'] = dedup_names(full_accounts)
     df = df.set_index('Full Account')
     return df
 
@@ -155,7 +144,7 @@ def compute_m_score_components(df):
         gmi = gm_t1 / gm_t
         aqi = (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y2) + get("bảng cân đối kế toán - tài sản cố định", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y1) + get("bảng cân đối kế toán - tài sản cố định", y1)) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
         sgi = get("kết quả kinh doanh - doanh thu thuần", y2) / get("kết quả kinh doanh - doanh thu thuần", y1)
-        dep1 = get("lưu chuyển tiền tệ - khấu hao tscđ và bđsđt", y1)
+        dep1 = get("lưu chuyển tiền tệ - khấu hao tscđ và bđsđt", y1) 
         dep2 = get("lưu chuyển tiền tệ - khấu hao tscđ và bđsđt", y2)
         fixed1 = get("bảng cân đối kế toán - tài sản cố định", y1)
         fixed2 = get("bảng cân đối kế toán - tài sản cố định", y2)
