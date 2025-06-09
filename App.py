@@ -140,6 +140,7 @@ def year(df):
     return [col for col in df.columns if isinstance(col, int) or (isinstance(col, str) and col.strip().isdigit() and len(col.strip()) == 4)]
 
 # --- Beneish M-Score ---
+# --- Beneish M-Score ---
 def compute_m_score_components(df):
     data_dict = df.T.to_dict()
     year_columns = year(df)
@@ -149,30 +150,33 @@ def compute_m_score_components(df):
 
     for i in range(len(year_columns) - 1):
         y1, y2 = year_columns[i], year_columns[i + 1]
-        try:
-            dsri = (get("bảng cân đối kế toán - các khoản phải thu", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("bảng cân đối kế toán - các khoản phải thu", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
-            gm_t = (get("kết quả kinh doanh - doanh thu thuần", y2) - get("kết quả kinh doanh - giá vốn hàng bán", y2)) / get("kết quả kinh doanh - doanh thu thuần", y2)
-            gm_t1 = (get("kết quả kinh doanh - doanh thu thuần", y1) - get("kết quả kinh doanh - giá vốn hàng bán", y1)) / get("kết quả kinh doanh - doanh thu thuần", y1)
-            gmi = gm_t1 / gm_t
-            aqi = (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y2) + get("bảng cân đối kế toán - tài sản cố định", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y1) + get("bảng cân đối kế toán - tài sản cố định", y1)) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
-            sgi = get("kết quả kinh doanh - doanh thu thuần", y2) / get("kết quả kinh doanh - doanh thu thuần", y1)
-            depi = (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y1) / (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y1) + get("bảng cân đối kế toán - tài sản cố định", y1))) / (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y2) / (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y2) + get("bảng cân đối kế toán - tài sản cố định", y2)))
-            sgai = (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
-            lvgi = (get("bảng cân đối kế toán - nợ phải trả", y2) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (get("bảng cân đối kế toán - nợ phải trả", y1) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
-            tata = (get("kết quả kinh doanh - lãi/(lỗ) thuần sau thuế", y2) - get("lưu chuyển tiền tệ - lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)
+        dsri = (get("bảng cân đối kế toán - các khoản phải thu", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("bảng cân đối kế toán - các khoản phải thu", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
+        gm_t = (get("kết quả kinh doanh - doanh thu thuần", y2) - get("kết quả kinh doanh - giá vốn hàng bán", y2)) / get("kết quả kinh doanh - doanh thu thuần", y2)
+        gm_t1 = (get("kết quả kinh doanh - doanh thu thuần", y1) - get("kết quả kinh doanh - giá vốn hàng bán", y1)) / get("kết quả kinh doanh - doanh thu thuần", y1)
+        gmi = gm_t1 / gm_t
+        aqi = (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y2) + get("bảng cân đối kế toán - tài sản cố định", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y1) + get("bảng cân đối kế toán - tài sản cố định", y1)) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
+        sgi = get("kết quả kinh doanh - doanh thu thuần", y2) / get("kết quả kinh doanh - doanh thu thuần", y1)
+        dep1 = get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y1)
+        dep2 = get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y2) + 1
+        fixed1 = get("bảng cân đối kế toán - tài sản cố định", y1)
+        fixed2 = get("bảng cân đối kế toán - tài sản cố định", y2)
 
-            m_score = -4.84 + 0.92*dsri + 0.528*gmi + 0.404*aqi + 0.892*sgi + \
+        denom1 = dep1 + fixed1
+        denom2 = dep2 + fixed2
+        depi = (dep1 / denom1) / (dep2 / denom2)
+
+        sgai = (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
+        lvgi = (get("bảng cân đối kế toán - nợ phải trả", y2) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (get("bảng cân đối kế toán - nợ phải trả", y1) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
+        tata = (get("kết quả kinh doanh - lãi/(lỗ) thuần sau thuế", y2) - get("lưu chuyển tiền tệ - lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)
+        m_score = -4.84 + 0.92*dsri + 0.528*gmi + 0.404*aqi + 0.892*sgi + \
                        0.115*depi - 0.172*sgai + 4.679*tata - 0.327*lvgi
 
-            results.append({
-                "Period": f"{y1}➞{y2}",
-                "DSRI": round(dsri, 4), "GMI": round(gmi, 4), "AQI": round(aqi, 4),
-                "SGI": round(sgi, 4), "DEPI": round(depi, 4), "SGAI": round(sgai, 4),
-                "LVGI": round(lvgi, 4), "TATA": round(tata, 4), "M-Score": round(m_score, 4)
-            })
-        except Exception:
-            continue
-
+        results.append({
+            "Period": f"{y1}➞{y2}",
+            "DSRI": round(dsri, 4), "GMI": round(gmi, 4), "AQI": round(aqi, 4),
+            "SGI": round(sgi, 4), "DEPI": round(depi, 4), "SGAI": round(sgai, 4),
+            "LVGI": round(lvgi, 4), "TATA": round(tata, 4), "M-Score": round(m_score, 4)
+        })
     return results
 
 def compute_benford_all_periods(df):
