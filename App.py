@@ -2,7 +2,7 @@
 from account_mapping_utils import setup_account_mapping, robust_get
 from flask import Flask, request, render_template, redirect, url_for, session
 from flask_session import Session
-from App1 import prepare_excel, rag 
+from AI_model import prepare_excel, rag 
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -156,8 +156,8 @@ def compute_m_score_components(df):
         gmi = gm_t1 / gm_t
         aqi = (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y2) + get("bảng cân đối kế toán - tài sản cố định", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y1) + get("bảng cân đối kế toán - tài sản cố định", y1)) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
         sgi = get("kết quả kinh doanh - doanh thu thuần", y2) / get("kết quả kinh doanh - doanh thu thuần", y1)
-        dep1 = get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y1)
-        dep2 = get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y2) + 1
+        dep1 = get("lưu chuyển tiền tệ - khấu hao tscđ và bđsđt", y1)
+        dep2 = get("lưu chuyển tiền tệ - khấu hao tscđ và bđsđt", y2)
         fixed1 = get("bảng cân đối kế toán - tài sản cố định", y1)
         fixed2 = get("bảng cân đối kế toán - tài sản cố định", y2)
 
