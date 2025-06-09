@@ -301,7 +301,25 @@
           {{ m_score if m_score is not none else "N/A" }}
         </div>
         <div class="benchmark" style="font-size:0.75rem; color:#6b7280; margin-bottom:6px;">Threshold: <span style="font-size:0.875rem; color:#3b82f6; margin-bottom:6px; font-weight: 500;">-2.22 </span> </div>
-        <div class="warning" style="font-size:0.65rem; color:#1d4ed8; font-weight:600; background: #dbeafe; border-radius: 16px; padding: 3px 5px; max-width: fit-content ;margin: auto;"> Close to warning threshold</div>   
+        {% if m_score is not none %}
+          {% if m_score < -2.22 %}
+            <div class="warning" style="font-size:0.65rem; color:#10b981; font-weight:600; background: #d1fae5; border-radius: 16px; padding: 3px 5px; max-width: fit-content ;margin: auto;">
+              Unlikely Manipulator
+            </div>    
+          {% elif m_score < -1.78 %}
+            <div class="warning" style="font-size:0.65rem; color:#f59e0b; font-weight:600; background: #fef9c3; border-radius: 16px; padding: 3px 5px; max-width: fit-content ;margin: auto;">
+              Possible
+            </div>
+          {% else %}
+            <div class="warning" style="font-size:0.65rem; color:#ec4899; font-weight:600; background: #fee2e2; border-radius: 16px; padding: 3px 5px; max-width: fit-content ;margin: auto;">
+              Likely Manipulation
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="warning" style="font-size:0.65rem; color:#6b7280; font-weight:600; background: #e5e7eb; border-radius: 16px; padding: 3px 5px; max-width: fit-content ;margin: auto;">
+            No M-Score Available
+          </div>
+        {% endif %}
         </div>
       </div>
     </article>
@@ -313,9 +331,15 @@
         <div class="label" id="benford-title">Benford Deviation</div>
         <div class="value" style="font-weight:700; font-size:1.35rem; margin-bottom:2px; color: #be1862">
           {% if mad is not none %}
-            {% if mad > 0.012 %}Medium{% else %}Low{% endif %}
+            {% if mad > 0.012 %}
+              <span style="color:#ec4899; font-weight:600;">High</span>
+            {% elif mad > 0.006 %}
+              <span style="color:#f59e0b; font-weight:600;">Medium</span>
+            {% else %}
+              <span style="color:#10b981; font-weight:600;">Low</span>
+            {% endif %}
           {% else %}
-            N/A
+            <span style="color:#6b7280;">N/A</span>
           {% endif %}
         </div>
         <div class="benchmark" style="font-size:0.75rem; color:#6b7280; margin-bottom:6px;">
@@ -323,7 +347,25 @@
             {{ mad if mad is not none else "N/A" }}
           </span>
         </div>
-        <div class="warning" style="font-size:0.65rem; color: #1d4ed8; font-weight:600; background: #dbeafe; border-radius: 16px; padding: 3px 5px; max-width: fit-content; margin: auto;">Notable deviation</div>
+        {% if mad is not none %}
+          {% if mad > 0.012 %}
+            <div class="warning" style="font-size:0.65rem; color: #ec4899; font-weight:600; background: #fee2e2; border-radius: 16px; padding: 3px 5px; max-width: fit-content; margin: auto;">
+              Significant deviation
+            </div>
+          {% elif mad > 0.006 %}
+            <div class="warning" style="font-size:0.65rem; color: #f59e0b; font-weight:600; background: #fef9c3; border-radius: 16px; padding: 3px 5px; max-width: fit-content; margin: auto;">
+              Notable deviation
+            </div>
+          {% else %}
+            <div class="warning" style="font-size:0.65rem; color: #10b981; font-weight:600; background: #d1fae5; border-radius: 16px; padding: 3px 5px; max-width: fit-content; margin: auto;">
+              Minimal deviation
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="warning" style="font-size:0.65rem; color: #6b7280; font-weight:600; background: #e5e7eb; border-radius: 16px; padding: 3px 5px; max-width: fit-content; margin: auto;">
+            No data available
+          </div>
+        {% endif %}
       </div>
     </article>
   </section>
@@ -361,13 +403,22 @@
           <span>Volatility: ↑</span>
         </div>
         <div class="contrib-factors">
-          <strong>Contributing Factors:</strong>
-          <ul>
-            <li>High Days Sales in Receivables Index</li>
-            <li>Increased Asset Quality Index</li>
-            <li>Stable Gross Margin Index</li>
+          <strong>Top 3 Variable Changes:</strong>
+          <ul class="m-score-change-list">
+            {% for var, value, delta, explanation in top_changes %}
+              <li>
+                <strong>{{ var }}</strong>: {{ "%.4f"|format(value) }}
+                {% if delta is not none %}
+                  (<span style="color:{% if delta > 0 %}green{% elif delta < 0 %}red{% else %}gray{% endif %}; font-weight:600;">
+                    {{ "+" if delta > 0 else "" }}{{ "%.4f"|format(delta) }}
+                  </span>)
+                {% endif %}
+                <span title="{{ explanation }}" style="cursor: help; color: #6366f1; font-weight: bold; margin-left: 6px;">&#9432;</span>
+              </li>
+            {% endfor %}
           </ul>
         </div>
+
         <!-- M-Score Components Bar Chart -->
         <div style="margin: 18px 0 0 0;">
           <div style="font-weight:600; color:#1d4ed8; font-size:1rem; margin-bottom:6px;">Component Comparison (Current vs Previous)</div>
@@ -416,69 +467,116 @@
 
     <!-- Right Column -->
     <div class="right-column">
-      <section class="benford-analysis" role="region" aria-labelledby="benford-analysis-title" style="position:relative;">
-        <div class="warning-label"
-             style="position:absolute; top:16px; right:20px; display:inline-block; background:#fef3c7; color:#ec4899; font-weight:700; font-size:0.875rem; padding:2px 8px; border-radius:16px; z-index:1;">
-          Medium
-        </div>
-        <h3 id="benford-analysis-title" style="margin-top:0; font-weight:700; margin-bottom:1px; font-size: 1.5rem;">Benford Analysis</h3>
-        <div class="current-value">
-          <span style="color: var(--color-text-main);">MAD Deviation:</span>
-          <span style="color:#ec4899; font-weight:700;">{{ mad if mad is not none else "N/A" }}</span>
-        </div>
-        <div class="threshold-volatility">
-          <span>Deviation Level: 
-            <span style="color:#ec4899; font-weight:600;">
-              {% if mad is not none %}
-                {% if mad > 0.012 %}Medium{% else %}Low{% endif %}
+      <section class="benford-analysis" role="region" aria-labelledby="benford-analysis-title"
+        style="position:relative; min-height:420px; height:100%; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div class="warning-label"
+               style="position:absolute; top:16px; right:20px; display:inline-block; background:#fef3c7; color:#ec4899; font-weight:700; font-size:0.875rem; padding:2px 8px; border-radius:16px; z-index:1;">
+            {% if mad is not none %}
+              {% if mad > 0.012 %}
+                <span style="color:#ec4899; font-weight:600;">High</span>
+              {% elif mad > 0.006 %}
+                <span style="color:#f59e0b; font-weight:600;">Medium</span>
               {% else %}
-                N/A
+                <span style="color:#10b981; font-weight:600;">Low</span>
               {% endif %}
-            </span>
-          </span>
+            {% else %}
+              <span style="color:#6b7280;">N/A</span>
+            {% endif %}
+          </div>
+          <h3 id="benford-analysis-title" style="margin-top:0; font-weight:700; margin-bottom:1px; font-size: 1.5rem;">Benford Analysis</h3>
+          <div class="current-value">
+            <span style="color: var(--color-text-main);">MAD Deviation:</span>
+            <span style="color:#ec4899; font-weight:700;">{{ mad if mad is not none else "N/A" }}</span>
+          </div>
+          <div class="threshold-volatility">
+            <span>Deviation Level:</span>
+            {% if mad is not none %}
+              {% if mad > 0.012 %}
+                <span style="color:#ec4899; font-weight:600;">High</span>
+              {% elif mad > 0.006 %}
+                <span style="color:#f59e0b; font-weight:600;">Medium</span>
+              {% else %}
+                <span style="color:#10b981; font-weight:600;">Low</span>
+              {% endif %}
+            {% else %}
+              <span style="color:#6b7280;">N/A</span>
+            {% endif %}
+          </div>
+          {% if mad is not none %}
+            <p class="text-muted small" style="margin-top: 6px;">
+              {% if mad > 0.012 %}
+                This dataset is <strong>inconsistent</strong> with what we’d expect from Benford’s Law. Significant deviations may indicate manipulation.
+              {% elif mad > 0.006 %}
+                This dataset is generally consistent with Benford’s Law, but some deviations may need further review.
+              {% else %}
+                This dataset is <strong>consistent</strong> with what we’d expect from Benford’s Law. No signs of irregularity.
+              {% endif %}
+            </p>
+          {% endif %}
         </div>
-        <div class="benford-charts" aria-hidden="true">
-          <div id="benford-interactive-chart" style="width:100%;max-width:480px;height:200px;margin:auto;"></div>
+        <div class="benford-charts" aria-hidden="true" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+          <div id="benford-interactive-chart" style="width:100%;height:220px;max-width:480px;margin:auto;"></div>
           {% if plotly_benford_data %}
           <script>
           const benfordData = JSON.parse('{{ plotly_benford_data|safe }}');
           if (benfordData && benfordData.x && benfordData.benford && benfordData.actual) {
-              const trace1 = {
-                  x: benfordData.x,
-                  y: benfordData.benford,
-                  name: "Benford (%)",
-                  type: 'bar',
-                  marker: {color: '#F8BBD0'}, // light pink
-                  opacity: 0.6,
-              };
-              const trace2 = {
-                  x: benfordData.x,
-                  y: benfordData.actual,
-                  name: "Actual (%)",
-                  type: 'bar',
-                  marker: {color: '#81D4FA'}, // light blue
-                  opacity: 0.6,
-              };
-              const layout = {
-                  barmode: 'group',
-                  title: '',
-                  xaxis: {title: 'Leading Digit', tickfont: {size: 12}},
-                  yaxis: {title: 'Percentage', tickfont: {size: 12}},
-                  legend: {orientation: 'h', y: -0.2},
-                  plot_bgcolor: '#fff',
-                  autosize: true,
-                  margin: { t: 10, l: 30, r: 10, b: 40 },
-                  height: 200,
-                  width: null
-              };
-              Plotly.newPlot('benford-interactive-chart', [trace1, trace2], layout, {responsive: true});
+            const trace1 = {
+              x: benfordData.x,
+              y: benfordData.benford,
+              name: "Benford (%)",
+              type: 'bar',
+              marker: { color: '#F48FB1' },
+              opacity: 0.7,
+              hovertemplate: 'Benford (%): %{y:.2f}<extra></extra>',
+            };
+
+            const trace2 = {
+              x: benfordData.x,
+              y: benfordData.actual,
+              name: "Actual (%)",
+              type: 'bar',
+              marker: { color: '#4FC3F7' },
+              opacity: 0.8,
+              hovertemplate: 'Actual (%): %{y:.2f}<extra></extra>',
+            };
+
+            const layout = {
+              barmode: 'group',
+              title: '',
+              xaxis: {
+                title: 'Leading Digit',
+                tickfont: { size: 13 },
+                titlefont: { size: 14 }
+              },
+              yaxis: {
+                title: 'Percentage',
+                tickfont: { size: 13 },
+                titlefont: { size: 14 }
+              },
+              legend: {
+                orientation: 'h',
+                y: -0.3,
+                font: { size: 12 }
+              },
+              plot_bgcolor: '#ffffff',
+              paper_bgcolor: '#ffffff',
+              margin: { t: 10, l: 40, r: 10, b: 60 },
+              height: 220, // Match the height set in the div above
+              autosize: true
+            };
+            const config = {
+              responsive: true,
+              displayModeBar: false
+            };
+            Plotly.newPlot('benford-interactive-chart', [trace1, trace2], layout, config);
           }
           </script>
           {% endif %}
         </div>
         <div class="benford-legend">
-          <span><span class="benford-legend-color benford-actual"></span>Actual</span>
-          <span><span class="benford-legend-color benford-expected"></span>Expected</span>
+          <span><span class="benford-legend-color benford-actual"></span></span>
+          <span><span class="benford-legend-color benford-expected"></span></span>
         </div>
       </section>
     </div>
@@ -517,7 +615,44 @@
     {% endif %}
   </section>
 
-  <!-- Recommendations & Next Steps (moved outside .bottom-row for full width) -->
+  <!-- Question & Answer Block (styled like other sections, above Recommendations) -->
+  <section class="qa-block" style="background:white; border-radius:8px; margin:24px 0 0 0; padding:24px 24px 18px 24px; box-shadow:0 2px 8px rgb(0 0 0 / 0.05);">
+    <h3 style="font-weight:700; font-size:1.25rem; color:#1d4ed8; margin-bottom:12px;">Ask a Question</h3>
+    <form id="qa-form" style="display:flex; gap:12px; align-items:center; margin-bottom:0;">
+        <input type="text" id="user_question" name="user_question" placeholder="Ask a question..." required
+               style="flex:1; padding:10px 14px; border:1px solid #d1d5db; border-radius:8px; font-size:1rem; font-family:inherit;">
+        <button type="submit" class="btn-blue" style="padding:6px 14px; font-size:0.95rem; min-width:60px; flex:0 0 auto;">Ask</button>
+    </form>
+    <div id="qa-answer-block" style="margin-top:1.2em;">
+      {% if latest_qa.question %}
+        <div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">
+          <b style="color:#1e40af;">Question:</b> {{ latest_qa.question }}<br>
+          <b style="color:#1e40af;">Answer:</b> {{ latest_qa.answer|safe }}
+        </div>
+      {% endif %}
+    </div>
+  </section>
+  <script>
+  document.getElementById('qa-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const question = document.getElementById('user_question').value;
+      fetch('/ask', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: 'user_question=' + encodeURIComponent(question)
+      })
+      .then(response => response.text())
+      .then(answerHtml => {
+          document.getElementById('qa-answer-block').innerHTML =
+              '<div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">' +
+              '<b style="color:#1e40af;">Q:</b> ' + question + '<br>' +
+              '<b style="color:#1e40af;">A:</b> ' + answerHtml +
+              '</div>';
+      });
+  });
+  </script>
+
+  <!-- Recommendations & Next Steps (now below Q&A block) -->
   <section class="recommendations" role="region" aria-labelledby="recommendations-title">
     <h3 id="recommendations-title">Recommendations &amp; Next Steps</h3>
     <ul>
@@ -529,7 +664,8 @@
       <button class="btn-blue" aria-label="Notify Management">Notify Management</button>
       <button class="btn-white" aria-label="Reference Materials">Reference Materials</button>
     </div>
-  </section>
+  </section> 
+  
 </main>
 
 <footer>

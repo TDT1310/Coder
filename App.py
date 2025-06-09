@@ -2,6 +2,7 @@
 from account_mapping_utils import setup_account_mapping, robust_get
 from flask import Flask, request, render_template, redirect, url_for, session
 from flask_session import Session
+from AI_model import prepare_excel, rag 
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -14,6 +15,8 @@ from pathlib import Path
 import base64
 from io import BytesIO
 import json
+import tempfile
+import markdown
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key" 
@@ -146,30 +149,32 @@ def compute_m_score_components(df):
 
     for i in range(len(year_columns) - 1):
         y1, y2 = year_columns[i], year_columns[i + 1]
-        try:
-            dsri = (get("bảng cân đối kế toán - các khoản phải thu", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("bảng cân đối kế toán - các khoản phải thu", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
-            gm_t = (get("kết quả kinh doanh - doanh thu thuần", y2) - get("kết quả kinh doanh - giá vốn hàng bán", y2)) / get("kết quả kinh doanh - doanh thu thuần", y2)
-            gm_t1 = (get("kết quả kinh doanh - doanh thu thuần", y1) - get("kết quả kinh doanh - giá vốn hàng bán", y1)) / get("kết quả kinh doanh - doanh thu thuần", y1)
-            gmi = gm_t1 / gm_t
-            aqi = (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y2) + get("bảng cân đối kế toán - tài sản cố định", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y1) + get("bảng cân đối kế toán - tài sản cố định", y1)) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
-            sgi = get("kết quả kinh doanh - doanh thu thuần", y2) / get("kết quả kinh doanh - doanh thu thuần", y1)
-            depi = (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y1) / (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y1) + get("bảng cân đối kế toán - tài sản cố định", y1))) / (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y2) / (get("thuyết minh - chi phí sản xuất theo yếu tố - chi phí khấu hao tài sản cố định", y2) + get("bảng cân đối kế toán - tài sản cố định", y2)))
-            sgai = (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
-            lvgi = (get("bảng cân đối kế toán - nợ phải trả", y2) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (get("bảng cân đối kế toán - nợ phải trả", y1) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
-            tata = (get("kết quả kinh doanh - lãi/(lỗ) thuần sau thuế", y2) - get("lưu chuyển tiền tệ - lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)
+        dsri = (get("bảng cân đối kế toán - các khoản phải thu", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("bảng cân đối kế toán - các khoản phải thu", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
+        gm_t = (get("kết quả kinh doanh - doanh thu thuần", y2) - get("kết quả kinh doanh - giá vốn hàng bán", y2)) / get("kết quả kinh doanh - doanh thu thuần", y2)
+        gm_t1 = (get("kết quả kinh doanh - doanh thu thuần", y1) - get("kết quả kinh doanh - giá vốn hàng bán", y1)) / get("kết quả kinh doanh - doanh thu thuần", y1)
+        gmi = gm_t1 / gm_t
+        aqi = (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y2) + get("bảng cân đối kế toán - tài sản cố định", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (1 - (get("bảng cân đối kế toán - tài sản ngắn hạn", y1) + get("bảng cân đối kế toán - tài sản cố định", y1)) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
+        sgi = get("kết quả kinh doanh - doanh thu thuần", y2) / get("kết quả kinh doanh - doanh thu thuần", y1)
+        dep1 = get("lưu chuyển tiền tệ - khấu hao tscđ và bđsđt", y1)
+        dep2 = get("lưu chuyển tiền tệ - khấu hao tscđ và bđsđt", y2)
+        fixed1 = get("bảng cân đối kế toán - tài sản cố định", y1)
+        fixed2 = get("bảng cân đối kế toán - tài sản cố định", y2)
 
-            m_score = -4.84 + 0.92*dsri + 0.528*gmi + 0.404*aqi + 0.892*sgi + \
+        depi = (dep1 / (dep1 + fixed1)) / (dep2 / (dep2 + fixed2))
+
+        sgai = (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y2) / get("kết quả kinh doanh - doanh thu thuần", y2)) / (get("kết quả kinh doanh - chi phí quản lý doanh nghiệp", y1) / get("kết quả kinh doanh - doanh thu thuần", y1))
+        lvgi = (get("bảng cân đối kế toán - nợ phải trả", y2) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)) / (get("bảng cân đối kế toán - nợ phải trả", y1) / get("bảng cân đối kế toán - tổng cộng tài sản", y1))
+        tata = (get("kết quả kinh doanh - lãi/(lỗ) thuần sau thuế", y2) - get("lưu chuyển tiền tệ - lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", y2)) / get("bảng cân đối kế toán - tổng cộng tài sản", y2)
+
+        m_score = -4.84 + 0.92*dsri + 0.528*gmi + 0.404*aqi + 0.892*sgi + \
                        0.115*depi - 0.172*sgai + 4.679*tata - 0.327*lvgi
 
-            results.append({
-                "Period": f"{y1}➞{y2}",
-                "DSRI": round(dsri, 4), "GMI": round(gmi, 4), "AQI": round(aqi, 4),
-                "SGI": round(sgi, 4), "DEPI": round(depi, 4), "SGAI": round(sgai, 4),
-                "LVGI": round(lvgi, 4), "TATA": round(tata, 4), "M-Score": round(m_score, 4)
-            })
-        except Exception:
-            continue
-
+        results.append({
+            "Period": f"{y1}➞{y2}",
+            "DSRI": round(dsri, 4), "GMI": round(gmi, 4), "AQI": round(aqi, 4),
+            "SGI": round(sgi, 4), "DEPI": round(depi, 4), "SGAI": round(sgai, 4),
+            "LVGI": round(lvgi, 4), "TATA": round(tata, 4), "M-Score": round(m_score, 4)
+        })
     return results
 
 def compute_benford_all_periods(df):
@@ -256,6 +261,43 @@ def benford_bar_chart(comparison_df, period):
     fig.patch.set_facecolor('#fff')
     return fig_to_base64(fig)
 
+m_score_explanations = {
+    "DSRI": "A significant increase in receivables relative to sales may indicate premature revenue recognition to artificially boost earnings.",
+    "GMI": "A declining gross margin may signal deteriorating business performance, prompting firms to manipulate profits.",
+    "AQI": "An increase in long-term assets—excluding property, plant and equipment—relative to total assets suggests aggressive capitalization of costs, potentially inflating earnings.",
+    "SGI": "While high growth does not imply manipulation, rapidly expanding firms may face greater pressure to meet market expectations, increasing the temptation to alter reported earnings.",
+    "DEPI": "A decline in depreciation expense relative to net fixed assets may reflect changes in accounting estimates that increase reported income.",
+    "SGAI": "A disproportionate rise in SG&A expenses compared to sales can be viewed negatively by analysts, incentivizing management to adjust earnings figures.",
+    "LVGI": "An increase in leverage (total debt relative to total assets) can pressure firms to manipulate earnings to comply with debt covenants.",
+    "TATA": "Higher accruals indicate greater use of discretionary accounting practices, which may be associated with earnings manipulation."
+}
+
+def top_mscore_changes(m_score_table):
+    """
+    Returns a dictionary with period as key and list of top 3 changing variables as values.
+    """
+    variables = ["DSRI", "GMI", "AQI", "SGI", "DEPI", "SGAI", "LVGI", "TATA"]
+    top_changes_by_period = {}
+
+    for i in range(1, len(m_score_table)):
+        curr = m_score_table[i]
+        prev = m_score_table[i - 1]
+        period = curr["Period"]
+
+        deltas = []
+        for var in variables:
+            try:
+                delta = curr[var] - prev[var]
+                explanation = m_score_explanations.get(var, "")
+                deltas.append((var, curr[var], delta, explanation))
+            except Exception:
+                continue
+
+        top3 = sorted(deltas, key=lambda x: abs(x[2]), reverse=True)[:3]
+        top_changes_by_period[period] = top3
+
+    return top_changes_by_period
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -267,15 +309,20 @@ def index():
                 uploaded_file = io.BytesIO(file_bytes)
                 # Process the file to get combined data
                 final_data = transformer(uploaded_file)
+
                 # Reset pointer for further reading
                 uploaded_file.seek(0)
-                extracted_data = Data_extract(uploaded_file, "Thuyết minh")
+                # Save to a temp file for prepare_excel
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                    tmp.write(file_bytes)
+                    tmp_path = tmp.name
+                session["excel_file_path"] = tmp_path  
                 # Store data as JSON for dashboard use
                 session["final_data"] = final_data.to_json()
-                session["extracted_data"] = extracted_data.to_json()
                 # Compute M-score and interpretation for dashboard
                 m_score_table = compute_m_score_components(final_data)
                 session["m_score_table"] = m_score_table  # Store the table for chart
+                session["top_mscore_changes"] = top_mscore_changes(m_score_table)
                 if m_score_table:
                     session["m_score"] = m_score_table[-1]["M-Score"]
                 else:
@@ -300,14 +347,22 @@ def index():
                 return render_template("upload.html", error=err_msg)
     return render_template("upload.html")
 
-@app.route("/dashboard")
+@app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
     if "analysis_result" not in session:
         return redirect(url_for("index"))
     final_data = pd.read_json(session["final_data"])
-    extracted_data = pd.read_json(session["extracted_data"])
     m_score_table = session.get("m_score_table", [])
-    benford_results = session.get("benford_results", {})
+    benford_results = session.get("benford_results", {}) 
+    excel_file_path = session.get("excel_file_path")
+
+    # Write final_data to a temp Excel file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+        final_data.to_excel(tmp.name, index=False)
+        excel_file_path = tmp.name
+    excel_df = None
+    if excel_file_path:
+        excel_df = prepare_excel(excel_file_path)
 
     # Prepare periods for dashboard
     year_columns = year(final_data)
@@ -316,10 +371,13 @@ def dashboard():
         y1, y2 = year_columns[i], year_columns[i + 1]
         periods.append(f"{y1}-{y2}")
 
-    # Get selected period from GET param, default to most recent
-    selected_period = request.args.get("selected_period")
+    # Get selected period from GET/POST param, default to most recent
+    selected_period = request.values.get("selected_period")
     if not selected_period or selected_period not in periods:
         selected_period = periods[-1] if periods else None
+
+    top_changes_by_period = session.get("top_mscore_changes", {})
+    top_changes = top_changes_by_period.get(selected_period.replace("-", "➞"), [])
 
     # Find the corresponding M-Score value for the selected period
     m_score_value = None
@@ -372,24 +430,38 @@ def dashboard():
             "previous": [previous[var] for var in variables] if previous else [None]*len(variables),
             "previous_label": selected_period_label.split("➞")[0] if selected_period_label and "➞" in selected_period_label else "T-1"
         }
-
-    table_html = final_data.to_html(classes="table table-striped", border=0)
-    extracted_html = extracted_data.to_html(classes="table table-striped", border=0)
+    # --- Q&A Block ---
+    qa_history = session.get("qa_history", [])
+    latest_answer = session.get("latest_answer", "")
+    latest_qa = session.get("latest_qa", {})
 
     return render_template(
         "dashboard.html",
         result=session.get("analysis_result"),
         m_score=m_score_value,
-        table_html=table_html,
-        extracted_html=extracted_html,
         mad=mad,
         plotly_benford_data=json.dumps(plotly_benford_data),
         mscore_plotly_data=json.dumps(mscore_plotly_data),
         periods=periods,
         selected_period=selected_period,
         mscore_components_bar_data=json.dumps(mscore_components_bar_data),
+        top_changes=top_changes,
+        qa_history=qa_history,
+        latest_answer=latest_answer,
+        latest_qa=latest_qa,  # <-- Add this line
         # ...other context...
     )
+
+@app.route("/ask", methods=["POST"])
+def ask():
+    question = request.form.get("user_question")
+    excel_file_path = session.get("excel_file_path")
+    excel_df = prepare_excel(excel_file_path) if excel_file_path else None
+    answer = rag(excel_df, question) if excel_df else "Knowledge base not available."
+    answer_html = markdown.markdown(answer, extensions=["fenced_code", "tables", "nl2br"])
+    # Save latest Q&A to session
+    session["latest_qa"] = {"question": question, "answer": answer_html}
+    return answer_html  # Return only the answer HTML
 
 if __name__ == "__main__":
     app.run(debug=True)

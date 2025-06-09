@@ -1,4 +1,4 @@
-# ĐÂY LÀ PHẦN KHAI BÁO THƯ VIỆN
+# ĐÂY LÀ PHẦN KHAI BÁO THƯ VIỆNAdd commentMore actions
 from account_mapping_utils import setup_account_mapping, robust_get
 from flask import Flask, request, render_template, redirect, url_for, session
 from flask_session import Session
@@ -36,9 +36,8 @@ def dedup_names(names):
     return result
 
 def Data_extract(uploaded_file, sheet_name):
-
     """
-    Extracts the financial data table from an Excel sheet, detects header,
+    Extracts the financial data table from an Excel sheet, detects header,Add commentMore actions
     aligns with bold formatting, and builds a unique Full Account label.
     """
     # Step 1: Detect header row (where the most year-like values are)
@@ -341,53 +340,3 @@ if uploaded_file is not None:
             st.info("🟡 Acceptable conformity")
         else:
             st.error("❌ Nonconformity — possible anomaly")
-
-# ĐÂY LÀ PHẦN GIAO DIỆN
-
-#@app.route("/", methods=["GET", "POST"])
-#def index():
-#    if request.method == "POST":
-#        file = request.files.get("file-upload")
-#        print("file uploased:", file)
-#        if file:
-#            try:
-#                print("file is not empty")
-#                # Đọc file về bộ nhớ tạm
-#                file_bytes = file.read()
-#                uploaded_file = io.BytesIO(file_bytes)
-#                # Chạy transformer để lấy data tổng hợp
-#                final_data = transformer(uploaded_file)
-#                # Reset lại io cho Data_extract vì pandas cần đọc lại file từ đầu
-#                uploaded_file.seek(0)
-#                extracted_data = Data_extract(uploaded_file, "Thuyết minh")
-#                # Store only the data as JSON or CSV, not HTML
-#                print("final_data index:", list(final_data.index))
-#                session["final_data"] = final_data.to_json()
-#                session["extracted_data"] = extracted_data.to_json()
-#                session["analysis_result"] = compute_m_score_components(final_data)
-#                print("redirecting to dashboard")
-#                return redirect(url_for("dashboard"))
-#            
-#            except Exception as e:
-#                err_msg = f"Lỗi khi xử lý file: {e}"
-#                print("Error:", err_msg)
-#                return render_template("upload.html", error=err_msg)
-#
-#    return render_template("upload.html")
-
-#@app.route("/dashboard")
-#def dashboard():
-#    if "analysis_result" not in session:
-#        return redirect(url_for("index"))
-#    # Convert JSON back to DataFrame
-#    table_html = pd.read_json(session["final_data"]).to_html(classes="table table-striped", border=0)
-#    extracted_html = pd.read_json(session["extracted_data"]).to_html(classes="table table-striped", border=0)
-#    return render_template(
-#       "dashboard.html",
-#        result=session.get("analysis_result"),
-#        table_html=table_html,
-#        extracted_html=extracted_html
-#    )
-
-#if __name__ == "__main__":
-#    app.run(debug=True)

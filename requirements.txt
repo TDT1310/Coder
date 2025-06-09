@@ -6,3 +6,10 @@ matplotlib
 openpyxl
 rapidfuzz
 plotly
+langchain-community
+unstructured
+langchain-openai
+faiss-cpu
+langchain-google-genai
+markdown
+networkx
