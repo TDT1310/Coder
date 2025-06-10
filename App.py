@@ -246,7 +246,7 @@ def compute_m_score_components(df):
 # --- Benford's Distribution ---
 def compute_benford_all_periods(df):
     # Filter by IsBold == True
-    bold_df = df[df['IsBold'] == True]
+    bold_df = df
     year_columns = extract_year_columns(df)
     benford_results = {}
 

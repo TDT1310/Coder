@@ -350,9 +350,9 @@
         <div class="label" id="benford-title">Benford Deviation</div>
         <div class="value" style="font-weight:700; font-size:1.35rem; margin-bottom:2px; color: #be1862">
           {% if mad is not none %}
-            {% if mad > 0.012 %}
+            {% if mad > 1.6 %}
               <span style="color:#ec4899; font-weight:600;">High</span>
-            {% elif mad > 0.006 %}
+            {% elif mad > 1.0 %}
               <span style="color:#f59e0b; font-weight:600;">Medium</span>
             {% else %}
               <span style="color:#10b981; font-weight:600;">Low</span>
@@ -367,11 +367,11 @@
           </span>
         </div>
         {% if mad is not none %}
-          {% if mad > 0.012 %}
+          {% if mad > 1.6 %}
             <div class="warning" style="font-size:0.65rem; color: #ec4899; font-weight:600; background: #fee2e2; border-radius: 16px; padding: 3px 5px; max-width: fit-content; margin: auto;">
               Significant deviation
             </div>
-          {% elif mad > 0.006 %}
+          {% elif mad > 1.0 %}
             <div class="warning" style="font-size:0.65rem; color: #f59e0b; font-weight:600; background: #fef9c3; border-radius: 16px; padding: 3px 5px; max-width: fit-content; margin: auto;">
               Notable deviation
             </div>
@@ -493,9 +493,9 @@
           <div class="warning-label"
                style="position:absolute; top:16px; right:20px; display:inline-block; background:#fef3c7; color:#ec4899; font-weight:700; font-size:0.875rem; padding:2px 8px; border-radius:16px; z-index:1;">
             {% if mad is not none %}
-              {% if mad > 0.012 %}
+              {% if mad > 1.6 %}
                 <span style="color:#ec4899; font-weight:600;">High</span>
-              {% elif mad > 0.006 %}
+              {% elif mad > 1.0 %}
                 <span style="color:#f59e0b; font-weight:600;">Medium</span>
               {% else %}
                 <span style="color:#10b981; font-weight:600;">Low</span>
@@ -512,9 +512,9 @@
           <div class="threshold-volatility">
             <span>Deviation Level:</span>
             {% if mad is not none %}
-              {% if mad > 0.012 %}
+              {% if mad > 1.6 %}
                 <span style="color:#ec4899; font-weight:600;">High</span>
-              {% elif mad > 0.006 %}
+              {% elif mad > 1.0 %}
                 <span style="color:#f59e0b; font-weight:600;">Medium</span>
               {% else %}
                 <span style="color:#10b981; font-weight:600;">Low</span>
@@ -525,9 +525,9 @@
           </div>
           {% if mad is not none %}
             <p class="text-muted small" style="margin-top: 6px;">
-              {% if mad > 0.012 %}
+              {% if mad > 1.6 %}
                 This dataset is <strong>inconsistent</strong> with what we'd expect from Benford's Law. Significant deviations may indicate manipulation.
-              {% elif mad > 0.006 %}
+              {% elif mad > 1.0 %}
                 This dataset is generally consistent with Benford's Law, but some deviations may need further review.
               {% else %}
                 This dataset is <strong>consistent</strong> with what we'd expect from Benford's Law. No signs of irregularity.
