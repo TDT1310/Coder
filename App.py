@@ -338,7 +338,7 @@ m_score_explanations = {
     ),
     "SGI": (
         "While high growth does not imply manipulation, rapidly expanding firms may face greater "
-        "pressure to meet market expectations, increasing the temptation to alter reported earnings."
+        "pressure to meet market expectations, increasing the temptation to adjust reported earnings."
     ),
     "DEPI": (
         "A decline in depreciation expense relative to net fixed assets may reflect changes in "
@@ -646,6 +646,9 @@ def rag_risk_analysis():
         benford_key = selected_period.replace("-", "➞")
         if benford_key in benford_results:
             mad = benford_results[benford_key]["mad"]
+    # Extract the two years from selected_period
+    years = selected_period.split("-") if selected_period and "-" in selected_period else []
+    year1, year2 = years[0], years[1] if len(years) == 2 else ("", "")
     excel_file_path = session.get("excel_file_path")
     excel_db = prepare_excel(excel_file_path) if excel_file_path else None
     output_retrieval_merged = ""
@@ -653,9 +656,9 @@ def rag_risk_analysis():
         # Use the same retrieval as in rag() for context
         retrieved_docs = excel_db.similarity_search("financial statement manipulation", k=5)
         output_retrieval_merged = "\n".join([doc.page_content for doc in retrieved_docs])
-    # Compose the detailed prompt with wrappers for M-Score and MAD
+    # Compose the detailed prompt with wrappers for M-Score and MAD and the two years
     prompt = f"""
-You are a financial forensic analyst AI. Based on the financial context below, evaluate the likelihood of financial statement manipulation using the following three methods:
+You are a financial forensic analyst AI. Based on the financial context below, evaluate the likelihood of financial statement manipulation using the following three methods for the period {year1} and {year2}:
 
 --------------------
 📄 Context:
@@ -687,7 +690,7 @@ You are a financial forensic analyst AI. Based on the financial context below, e
   - < 2 red flags → 1 point
   - ≥ 2 red flags → 0 points
 
-🔍 Red flags to detect (explain if present):
+🔍 Red flags to detect (explain if present, only use data from {year1} and {year2}):
 - CFO / Net Income < 0 or < 0.5 for 2 consecutive years
 - Other Receivables / Total Receivables > 0.5
 - Bad Debt Provision / Receivables > 0.3
@@ -708,10 +711,10 @@ You are a financial forensic analyst AI. Based on the financial context below, e
    - 4 points: Slight risk - Needs attention
    - 5 points: Low risk - No action needed
    - 6 points: Very low risk - No action needed
-4. how each of the red flags are calculated and their values and therir formulas
+4. how each of the red flags are calculated and their values and their formulas
 
 If the context lacks enough data, respond with:  
-**"I do not have enough financial data to compute a fraud risk score."**  and what data is lackings
+**"I do not have enough financial data to compute a fraud risk score."**  and what data is lacking
 """
     if excel_db:
         rag_result = rag(excel_db, prompt)
@@ -741,6 +744,56 @@ If the context lacks enough data, respond with:
                 break
     session['rag_conclusion'] = conclusion or ''
     return rag_result_html
+
+@app.route("/recommendations", methods=["POST"])
+def recommendations():
+    selected_period = request.form.get("selected_period")
+    # Extract the two years from selected_period
+    years = selected_period.split("-") if selected_period and "-" in selected_period else []
+    year1, year2 = years[0], years[1] if len(years) == 2 else ("", "")
+    excel_file_path = session.get("excel_file_path")
+    excel_db = prepare_excel(excel_file_path) if excel_file_path else None
+    output_retrieval_merged = ""
+    if excel_db:
+        # Use the same retrieval as in rag() for context
+        retrieved_docs = excel_db.similarity_search("financial statement manipulation", k=5)
+        output_retrieval_merged = "\n".join([doc.page_content for doc in retrieved_docs])
+    prompt = f"""
+You are a financial forensic analyst AI.  
+Based on the financial context below and detected red flags in the company’s financial statements from {year1} until {year2} to generate clear, actionable recommendations for areas that should be further investigated before making an investment decision.
+
+--------------------
+📄 Context:
+{output_retrieval_merged}
+--------------------
+
+Red Flags to be Detected (only use data from {year1} and {year2}):
+- CFO / Net Income < 0 or < 0.5 for 2 consecutive years
+- Other Receivables / Total Receivables > 0.5
+- Bad Debt Provision / Receivables > 0.3
+- CFO is negative while Net Income is positive for 2 years
+- Revenue growth > 50% YoY but CFO doesn't grow accordingly
+
+🎯 For each red flag:
+- Identify which section(s) of the financial statements or disclosures (e.g., revenue recognition, cash flow statement, accounts receivable, related party transactions, management discussion, etc.) are most relevant to the red flag.
+- Show the value for the accounts used
+- Explain why this area requires further attention, referencing the nature of the red flag.
+- Suggest specific questions the investor should ask or evidence/disclosures they should review to assess the true risk or to clarify the anomaly.
+If a red flag is particularly severe or raises suspicion of fraud, clearly recommend consulting auditors or seeking independent verification.
+
+Format your response as a **numbered list** with a brief summary at the end.  
+If there are no red flags, simply state:  
+"No material red flags were detected; no further investigation is recommended."
+
+"""
+    excel_file_path = session.get("excel_file_path")
+    excel_db = prepare_excel(excel_file_path) if excel_file_path else None
+    if excel_db:
+        recommendations_result = rag(excel_db, prompt)
+    else:
+        recommendations_result = "Knowledge base not available."
+    recommendations_result_html = markdown.markdown(recommendations_result, extensions=["fenced_code", "tables", "nl2br"])
+    return recommendations_result_html
 
 if __name__ == "__main__":
     app.run(debug=True)

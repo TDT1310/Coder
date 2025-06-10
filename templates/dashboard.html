@@ -388,6 +388,9 @@
   <!-- RAG Risk Analysis Block -->
   {% include 'rag_risk_analysis_block.html' %}
 
+  <!-- Recommendations Block -->
+  {% include 'recommendation_block.html' %}
+
   <!-- Analysis row -->
   <section class="bottom-row" aria-label="Detailed Analysis Section">
     <!-- Left Column -->
@@ -522,11 +525,11 @@
           {% if mad is not none %}
             <p class="text-muted small" style="margin-top: 6px;">
               {% if mad > 0.012 %}
-                This dataset is <strong>inconsistent</strong> with what we’d expect from Benford’s Law. Significant deviations may indicate manipulation.
+                This dataset is <strong>inconsistent</strong> with what we'd expect from Benford's Law. Significant deviations may indicate manipulation.
               {% elif mad > 0.006 %}
-                This dataset is generally consistent with Benford’s Law, but some deviations may need further review.
+                This dataset is generally consistent with Benford's Law, but some deviations may need further review.
               {% else %}
-                This dataset is <strong>consistent</strong> with what we’d expect from Benford’s Law. No signs of irregularity.
+                This dataset is <strong>consistent</strong> with what we'd expect from Benford's Law. No signs of irregularity.
               {% endif %}
             </p>
           {% endif %}

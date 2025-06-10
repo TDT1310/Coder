@@ -1,0 +1,39 @@
+<section class="recommendations" style="background:white; border-radius:8px; margin:24px 0; padding:24px 24px 18px 24px; box-shadow:0 2px 8px rgb(0 0 0 / 0.05);">
+  <h3 style="font-weight:700; font-size:1.15rem; color:#1d4ed8; margin-bottom:12px;">AI Recommendations</h3>
+  <div id="recommendation-answer-block" style="margin-top:1.2em;">
+    {% if recommendation_result %}
+      <div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">
+        <b style="color:#1e40af;">Recommendations:</b> {{ recommendation_result|safe }}
+      </div>
+    {% else %}
+      <div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">Generating recommendations...</div>
+    {% endif %}
+  </div>
+</section>
+<script>
+function fetchRecommendations(period) {
+    document.getElementById('recommendation-answer-block').innerHTML = '<div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">Generating recommendations...</div>';
+    fetch('/recommendations', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'selected_period=' + encodeURIComponent(period)
+    })
+    .then(response => response.text())
+    .then(answerHtml => {
+        document.getElementById('recommendation-answer-block').innerHTML =
+            '<div style="background:#f1f6fb; border-radius:6px; padding:14px 16px;">' +
+            '<b style="color:#1e40af;">Recommendations:</b> ' + answerHtml +
+            '</div>';
+    });
+}
+window.addEventListener('DOMContentLoaded', function() {
+    var period = document.getElementById('selected_period') ? document.getElementById('selected_period').value : null;
+    if (period) fetchRecommendations(period);
+    var periodSelect = document.getElementById('selected_period');
+    if (periodSelect) {
+        periodSelect.addEventListener('change', function() {
+            fetchRecommendations(this.value);
+        });
+    }
+});
+</script>
