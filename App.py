@@ -511,6 +511,11 @@ def dashboard():
     latest_answer = session.get("latest_answer", "")
     latest_qa = session.get("latest_qa", {})
 
+    rag_results_by_period = session.get("rag_results_by_period", {})
+    rag_conclusion = None
+    if selected_period in rag_results_by_period:
+        rag_conclusion = rag_results_by_period[selected_period].get("conclusion")
+
     return render_template(
         "dashboard.html",
         result=session.get("analysis_result"),
@@ -525,6 +530,7 @@ def dashboard():
         qa_history=qa_history,
         latest_answer=latest_answer,
         latest_qa=latest_qa,
+        rag_conclusion=rag_conclusion,
     )
 
 @app.route("/dashboard_analysis", methods=["GET"])
@@ -742,7 +748,13 @@ If the context lacks enough data, respond with:
             if allowed in rag_result:
                 conclusion = allowed
                 break
-    session['rag_conclusion'] = conclusion or ''
+    # Store the conclusion for this period in a session dictionary
+    rag_results_by_period = session.get("rag_results_by_period", {})
+    rag_results_by_period[selected_period] = {
+        "conclusion": conclusion,
+        "full_result": rag_result_html
+    }
+    session["rag_results_by_period"] = rag_results_by_period
     return rag_result_html
 
 @app.route("/recommendations", methods=["POST"])
@@ -760,7 +772,7 @@ def recommendations():
         output_retrieval_merged = "\n".join([doc.page_content for doc in retrieved_docs])
     prompt = f"""
 You are a financial forensic analyst AI.  
-Based on the financial context below and detected red flags in the company’s financial statements from {year1} until {year2} to generate clear, actionable recommendations for areas that should be further investigated before making an investment decision.
+Based on the financial context below and detected red flags in the company's financial statements from {year1} until {year2} to generate clear, actionable recommendations for areas that should be further investigated before making an investment decision.
 
 --------------------
 📄 Context:
@@ -794,6 +806,25 @@ If there are no red flags, simply state:
         recommendations_result = "Knowledge base not available."
     recommendations_result_html = markdown.markdown(recommendations_result, extensions=["fenced_code", "tables", "nl2br"])
     return recommendations_result_html
+
+@app.route("/summary_card", methods=["POST"])
+def summary_card():
+    selected_period = request.form.get("selected_period")
+    rag_results_by_period = session.get("rag_results_by_period", {})
+    rag_conclusion = None
+    if selected_period in rag_results_by_period:
+        rag_conclusion = rag_results_by_period[selected_period].get("conclusion")
+    return render_template("summary_card.html", rag_conclusion=rag_conclusion)
+
+@app.route("/reset_analysis", methods=["POST"])
+def reset_analysis():
+    keys_to_clear = [
+        "final_data", "m_score_table", "benford_results", "analysis_result", "m_score", "top_mscore_changes",
+        "rag_results_by_period", "qa_history", "latest_answer", "latest_qa", "excel_file_path"
+    ]
+    for key in keys_to_clear:
+        session.pop(key, None)
+    return redirect(url_for("index"))
 
 if __name__ == "__main__":
     app.run(debug=True)
