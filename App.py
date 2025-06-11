@@ -246,7 +246,7 @@ def compute_m_score_components(df):
 # --- Benford's Distribution ---
 def compute_benford_all_periods(df):
     # Filter by IsBold == True
-    bold_df = df[df['IsBold'] == True]
+    bold_df = df
     year_columns = extract_year_columns(df)
     benford_results = {}
 
@@ -402,7 +402,7 @@ def index():
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
                     tmp.write(file_bytes)
                     tmp_path = tmp.name
-                session["excel_file_path"] = tmp_path  
+                session["excel_file_path"] = tmp_path
                 # Store data as JSON for dashboard use
                 session["final_data"] = final_data.to_json()
                 # Compute M-score and interpretation for dashboard
