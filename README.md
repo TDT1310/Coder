@@ -78,7 +78,7 @@ pip install -r requirements.txt
 ## Possible Future Work
 - To further enhance FraudDetect Pro, the following improvements and features are proposed:
 
-- I**ntegrate Real-Time Market Data:** Connect to external APIs (e.g., Yahoo Finance, Bloomberg, or local providers) for up-to-date stock prices and economic indicators to enrich fraud analysis.
+- **Integrate Real-Time Market Data:** Connect to external APIs (e.g., Yahoo Finance, Bloomberg, or local providers) for up-to-date stock prices and economic indicators to enrich fraud analysis.
 - **Automated Report Generation:** Generate downloadable, professional PDF/Word reports summarizing key fraud risks, findings, and recommendations.
 - **User Management & Multi-Tenancy:** Add authentication, user roles, and organization support for enterprise use.
 - **Model Expansion:** Incorporate additional fraud detection models (e.g., Z-Score, Altman’s Model, machine learning approaches) for more comprehensive analysis.
